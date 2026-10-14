@@ -1,6 +1,7 @@
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
+import { LargeTitle } from '../components/LargeTitle';
 import { StorageMeter } from '../components/StorageMeter';
 import { TrackRow } from '../components/TrackRow';
 import { useMusicStore } from '../store/MusicStore';
@@ -25,6 +26,9 @@ export function DeviceScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View>
+            <View style={styles.titlePad}>
+              <LargeTitle>Player</LargeTitle>
+            </View>
             {device?.connected ? (
               <>
                 <GroupedSection
@@ -154,6 +158,7 @@ export function DeviceScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   list: { paddingTop: 8, paddingBottom: 32 },
+  titlePad: { paddingHorizontal: 16, paddingTop: 4 },
   deviceBlock: {
     padding: 16,
     gap: 14,

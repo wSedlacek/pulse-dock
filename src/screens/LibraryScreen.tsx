@@ -11,6 +11,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
+import { LargeTitle } from '../components/LargeTitle';
 import { TrackRow } from '../components/TrackRow';
 import { importHint } from '../services/importTracks';
 import { useMusicStore } from '../store/MusicStore';
@@ -73,6 +74,7 @@ export function LibraryScreen() {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <View style={styles.headerBlock}>
+              <LargeTitle>Library</LargeTitle>
               <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
                 {importHint()}
               </Text>

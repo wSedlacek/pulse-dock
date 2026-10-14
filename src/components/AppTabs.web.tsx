@@ -9,14 +9,19 @@ import {
   useWindowDimensions,
   type ColorValue,
 } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
+/** iPhone 15 logical points — used for the centered web shell. */
 const IPHONE_WIDTH = 390;
 const IPHONE_HEIGHT = 844;
+/** Matches Dynamic Island devices so the stack header sits flush under chrome. */
+const STATUS_BAR_INSET = 54;
+const HOME_INDICATOR_INSET = 34;
 
 function TabIcon({
   name,
@@ -42,6 +47,10 @@ function TabIcon({
   );
 }
 
+/**
+ * Decorative status bar drawn *over* the navigator (not in the layout flow),
+ * so the nav header + content share one continuous background under it.
+ */
 function StatusBarChrome() {
   const { colors, isDark } = useTheme();
   const time = new Date().toLocaleTimeString([], {
@@ -50,7 +59,7 @@ function StatusBarChrome() {
   });
 
   return (
-    <View style={styles.statusBar}>
+    <View pointerEvents="none" style={styles.statusBar}>
       <Text style={[typography.caption1, { color: colors.label, fontWeight: '600' }]}>
         {time}
       </Text>
@@ -70,6 +79,9 @@ export default function AppTabs() {
   const { selectedIds } = useMusicStore();
   const { colors, isDark } = useTheme();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const innerWidth = IPHONE_WIDTH - 24;
+  const innerHeight = IPHONE_HEIGHT - 24;
 
   return (
     <View
@@ -91,74 +103,97 @@ export default function AppTabs() {
           },
         ]}
       >
-        <StatusBarChrome />
-        <Tabs
-          screenOptions={{
-            headerShown: false,
-            tabBarActiveTintColor: colors.tint,
-            tabBarInactiveTintColor: colors.secondaryLabel,
-            tabBarLabelStyle: {
-              fontSize: 10,
-              fontWeight: '500',
+        {/*
+          Nested SafeAreaProvider: the phone shell defines the only safe-area
+          insets the navigator should respect (status bar + home indicator).
+          This avoids the root provider (desktop browser = 0) and prevents a
+          second opaque band under the status icons.
+        */}
+        <SafeAreaProvider
+          initialMetrics={{
+            frame: { x: 0, y: 0, width: innerWidth, height: innerHeight },
+            insets: {
+              top: STATUS_BAR_INSET,
+              right: 0,
+              bottom: HOME_INDICATOR_INSET,
+              left: 0,
             },
-            tabBarStyle: {
-              position: 'absolute',
-              backgroundColor: 'transparent',
-              borderTopColor: colors.separator,
-              borderTopWidth: StyleSheet.hairlineWidth,
-              elevation: 0,
-              height: 49,
-            },
-            tabBarBackground: () => (
-              <BlurView
-                intensity={80}
-                tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-                style={StyleSheet.absoluteFill}
-              />
-            ),
           }}
         >
-          <Tabs.Screen
-            name="library"
-            options={{
-              title: 'Library',
-              tabBarBadge: selectedIds.length || undefined,
-              tabBarBadgeStyle: {
-                backgroundColor: colors.danger,
-                color: colors.onTint,
-                fontSize: 11,
+          <Tabs
+            screenOptions={{
+              headerShown: false,
+              sceneStyle: { backgroundColor: colors.groupedBackground },
+              tabBarActiveTintColor: colors.tint,
+              tabBarInactiveTintColor: colors.secondaryLabel,
+              tabBarLabelStyle: {
+                fontSize: 10,
+                fontWeight: '500',
               },
-              tabBarIcon: ({ color, focused }) => (
-                <TabIcon
-                  name={focused ? 'musical-notes' : 'musical-notes-outline'}
-                  color={color}
+              tabBarStyle: {
+                position: 'absolute',
+                backgroundColor: 'transparent',
+                borderTopColor: colors.separator,
+                borderTopWidth: StyleSheet.hairlineWidth,
+                elevation: 0,
+                height: 49,
+              },
+              tabBarBackground: () => (
+                <BlurView
+                  intensity={80}
+                  tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+                  style={StyleSheet.absoluteFill}
                 />
               ),
             }}
-          />
-          <Tabs.Screen
-            name="player"
-            options={{
-              title: 'Player',
-              tabBarIcon: ({ color, focused }) => (
-                <TabIcon
-                  name={focused ? 'phone-portrait' : 'phone-portrait-outline'}
-                  color={color}
-                />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="sync"
-            options={{
-              title: 'Sync',
-              tabBarIcon: ({ color, focused }) => (
-                <TabIcon name={focused ? 'sync' : 'sync-outline'} color={color} />
-              ),
-            }}
-          />
-        </Tabs>
-        <View style={[styles.homeIndicator, { backgroundColor: colors.label }]} />
+          >
+            <Tabs.Screen
+              name="library"
+              options={{
+                title: 'Library',
+                tabBarBadge: selectedIds.length || undefined,
+                tabBarBadgeStyle: {
+                  backgroundColor: colors.danger,
+                  color: colors.onTint as string,
+                  fontSize: 11,
+                },
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon
+                    name={focused ? 'musical-notes' : 'musical-notes-outline'}
+                    color={color}
+                  />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="player"
+              options={{
+                title: 'Player',
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon
+                    name={focused ? 'phone-portrait' : 'phone-portrait-outline'}
+                    color={color}
+                  />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="sync"
+              options={{
+                title: 'Sync',
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon name={focused ? 'sync' : 'sync-outline'} color={color} />
+                ),
+              }}
+            />
+          </Tabs>
+        </SafeAreaProvider>
+
+        <StatusBarChrome />
+        <View
+          pointerEvents="none"
+          style={[styles.homeIndicator, { backgroundColor: colors.label }]}
+        />
       </View>
     </View>
   );
@@ -184,13 +219,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 20 },
   },
   statusBar: {
-    height: 54,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: STATUS_BAR_INSET,
     paddingHorizontal: 28,
     paddingTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    zIndex: 20,
+    zIndex: 30,
+    // Transparent — grouped background / large-title header show through.
+    backgroundColor: 'transparent',
   },
   island: {
     position: 'absolute',
@@ -243,11 +284,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   homeIndicator: {
+    position: 'absolute',
+    bottom: 8,
     alignSelf: 'center',
+    left: (IPHONE_WIDTH - 134) / 2 - 12,
     width: 134,
     height: 5,
     borderRadius: 3,
-    marginBottom: 8,
     opacity: 0.9,
+    zIndex: 30,
   },
 });

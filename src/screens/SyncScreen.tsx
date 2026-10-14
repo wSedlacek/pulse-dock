@@ -3,6 +3,7 @@ import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
+import { LargeTitle } from '../components/LargeTitle';
 import { StorageMeter } from '../components/StorageMeter';
 import { useMusicStore, useSyncSummary } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -45,6 +46,9 @@ export function SyncScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.pad}
       >
+        <View style={styles.titlePad}>
+          <LargeTitle>Sync</LargeTitle>
+        </View>
         {!device?.connected ? (
           <GroupedSection
             header="Player Offline"
@@ -201,6 +205,10 @@ const styles = StyleSheet.create({
   pad: {
     paddingTop: 8,
     paddingBottom: 96,
+  },
+  titlePad: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
   },
   block: {
     padding: 16,
