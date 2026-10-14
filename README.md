@@ -20,10 +20,12 @@ A **demo player** remains available for rehearsing the UI without hardware (no d
 
 ```bash
 npm install
-npm run web          # http://localhost:3847 (demo player only)
-npm run ios          # development build / Expo Go on device
+npm run web          # http://localhost:3847 — iPhone demo shell (web only)
+npm run ios          # real app, no demo chrome
 npm run android
 ```
+
+The centered phone frame, status bar, and home indicator are a **web-only** injection (`src/demo/DemoPhoneShell`) that publishes matching safe-area insets. Native builds never include that chrome.
 
 USB folder picking and file copy need a **native** build (iOS or Android). Web is for library/sync UX rehearsal.
 

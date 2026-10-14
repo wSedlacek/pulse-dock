@@ -32,7 +32,7 @@ export type ThemeColors = {
   secondaryFill: string;
   /** tab / nav bar surface */
   bar: string;
-  /** desk behind phone shell on web */
+  /** Desk behind the web-only DemoPhoneShell (unused on native). */
   desk: string;
   /** filled button label */
   onTint: string;

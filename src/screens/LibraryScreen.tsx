@@ -18,7 +18,7 @@ import {
   usePullToRevealSearch,
 } from '../components/PullToRevealSearch';
 import { TrackRow } from '../components/TrackRow';
-import { usePhoneSafePadding } from '../navigation/usePhoneSafePadding';
+import { useScreenContentInsets } from '../navigation/useScreenContentInsets';
 import { importHint } from '../services/importTracks';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -34,7 +34,7 @@ export function LibraryScreen() {
     setSelection,
   } = useMusicStore();
   const { colors } = useTheme();
-  const safePad = usePhoneSafePadding();
+  const contentInsets = useScreenContentInsets();
   const [query, setQuery] = useState('');
   const [importing, setImporting] = useState(false);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
@@ -122,7 +122,7 @@ export function LibraryScreen() {
           onScroll={Platform.OS === 'web' ? pullSearch.onScroll : undefined}
           onScrollBeginDrag={() => setOpenSwipeId(null)}
           style={{ backgroundColor: colors.groupedBackground }}
-          contentContainerStyle={[styles.list, safePad]}
+          contentContainerStyle={[styles.list, contentInsets]}
           ListHeaderComponent={
             <View style={styles.headerBlock}>
               <LargeTitle>Library</LargeTitle>

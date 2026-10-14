@@ -4,7 +4,7 @@ import { IOSButton } from '../components/IOSButton';
 import { LargeTitle } from '../components/LargeTitle';
 import { StorageMeter } from '../components/StorageMeter';
 import { TrackRow } from '../components/TrackRow';
-import { usePhoneSafePadding } from '../navigation/usePhoneSafePadding';
+import { useScreenContentInsets } from '../navigation/useScreenContentInsets';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
@@ -21,7 +21,7 @@ export function DeviceScreen() {
     syncProgress,
   } = useMusicStore();
   const { colors } = useTheme();
-  const safePad = usePhoneSafePadding();
+  const contentInsets = useScreenContentInsets();
 
   const onDeviceTracks = (device?.trackIds ?? [])
     .map((id) => libraryById.get(id))
@@ -38,7 +38,7 @@ export function DeviceScreen() {
         keyExtractor={(item) => item!.id}
         contentInsetAdjustmentBehavior="automatic"
         style={{ backgroundColor: colors.groupedBackground }}
-        contentContainerStyle={[styles.list, safePad]}
+        contentContainerStyle={[styles.list, contentInsets]}
         ListHeaderComponent={
           <View>
             <View style={styles.titlePad}>

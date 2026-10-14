@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DemoPhoneShell } from '../demo/DemoPhoneShell';
 import { MusicStoreProvider } from '../store/MusicStore';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 
@@ -38,7 +39,13 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <MusicStoreProvider>
-            <RootNavigator />
+            {/*
+              Web: DemoPhoneShell draws the iPhone frame and injects safe-area
+              insets. Native: passthrough — no demo chrome in the real app.
+            */}
+            <DemoPhoneShell>
+              <RootNavigator />
+            </DemoPhoneShell>
           </MusicStoreProvider>
         </ThemeProvider>
       </SafeAreaProvider>

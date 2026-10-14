@@ -3,8 +3,8 @@ import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
 
 /**
- * Web stand-in for UIKit large titles (headerLargeTitle only works on iOS).
- * Renders nothing on native so the stack header owns the title.
+ * Web polyfill for UIKit large titles (headerLargeTitle is iOS-only).
+ * Renders nothing on native — not part of the demo phone chrome.
  */
 export function LargeTitle({ children }: { children: string }) {
   const { colors } = useTheme();
