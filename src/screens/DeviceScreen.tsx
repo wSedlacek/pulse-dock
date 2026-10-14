@@ -1,5 +1,3 @@
-import { useNavigation } from 'expo-router';
-import { useLayoutEffect } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
@@ -10,14 +8,9 @@ import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
 
 export function DeviceScreen() {
-  const navigation = useNavigation();
   const { device, libraryById, connectDemoPlayer, disconnectPlayer, resetDemoData } =
     useMusicStore();
   const { colors } = useTheme();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({ title: 'Player' });
-  }, [navigation]);
 
   const onDeviceTracks = (device?.trackIds ?? [])
     .map((id) => libraryById.get(id))
@@ -131,7 +124,7 @@ export function DeviceScreen() {
             >
               Nothing on the player yet. Choose songs in Library, then run Sync.
             </Text>
-          ) : null
+          ) : undefined
         }
         renderItem={({ item, index }) => (
           <View

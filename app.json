@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "pulsedock",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pulsedock.app",
@@ -20,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#071225",
+        "backgroundColor": "#F2F2F7",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -34,14 +33,22 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "asyncRoutes": {
+            "web": true,
+            "native": false
+          }
+        }
+      ],
       "expo-font",
       "expo-sharing",
       "expo-system-ui",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#071225",
+          "backgroundColor": "#F2F2F7",
           "image": "./assets/splash-icon.png"
         }
       ]

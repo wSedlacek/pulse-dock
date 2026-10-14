@@ -1,8 +1,9 @@
 import { DynamicColorIOS, Platform } from 'react-native';
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/native-tabs';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 
+/** Stable Native Tabs API (SDK 58+). */
 export default function AppTabs() {
   const { selectedIds } = useMusicStore();
   const { colors } = useTheme();
@@ -43,7 +44,7 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="library" disableTransparentOnScrollEdge>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'music.note.list', selected: 'music.note.list' }}
-          md="library_music"
+          md={{ default: 'library_music', selected: 'library_music' }}
         />
         <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
         {selectedIds.length > 0 ? (
@@ -56,7 +57,7 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="player" disableTransparentOnScrollEdge>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'ipod', selected: 'ipod' }}
-          md="devices"
+          md={{ default: 'devices', selected: 'devices' }}
         />
         <NativeTabs.Trigger.Label>Player</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
@@ -67,7 +68,7 @@ export default function AppTabs() {
             default: 'arrow.triangle.2.circlepath',
             selected: 'arrow.triangle.2.circlepath',
           }}
-          md="sync"
+          md={{ default: 'sync', selected: 'sync' }}
         />
         <NativeTabs.Trigger.Label>Sync</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>

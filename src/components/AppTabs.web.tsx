@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Tabs } from 'expo-router';
+import { Tabs } from 'expo-router/js-tabs';
 import type { ComponentProps } from 'react';
 import {
   StyleSheet,

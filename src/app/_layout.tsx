@@ -25,7 +25,9 @@ function RootNavigator() {
           headerShown: false,
           contentStyle: { flex: 1, backgroundColor: colors.groupedBackground },
         }}
-      />
+      >
+        <Stack.Screen name="(tabs)" activityEnabled />
+      </Stack>
     </>
   );
 }

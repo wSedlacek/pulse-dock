@@ -1,5 +1,4 @@
-import { useNavigation } from 'expo-router';
-import { useLayoutEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { GroupedSection } from '../components/GroupedSection';
@@ -11,15 +10,10 @@ import { typography } from '../theme/typography';
 import { formatBytes } from '../utils/format';
 
 export function SyncScreen() {
-  const navigation = useNavigation();
   const { device, libraryById, syncProgress, runSync, connectDemoPlayer } =
     useMusicStore();
   const { plan, addBytes, removeBytes, keepBytes } = useSyncSummary();
   const { colors } = useTheme();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({ title: 'Sync' });
-  }, [navigation]);
 
   const counts = useMemo(
     () => ({

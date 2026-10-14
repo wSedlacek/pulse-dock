@@ -4,9 +4,10 @@ This is an Expo/React Native mobile application. Prioritize mobile-first pattern
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
 
-1. Read the major version of the `expo` package in `package.json`.
+1. Read the major version of the `expo` package in `package.json` (this project targets **SDK 58**).
 2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
 3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+4. Prefer stable SDK 58 router APIs: `expo-router/native-tabs`, `expo-router/js-tabs`, `Stack.Toolbar`, and `activityEnabled`. See https://docs.expo.dev/router/migrate/sdk-57-to-58/
 
 ## Commands
 

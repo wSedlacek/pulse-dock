@@ -50,4 +50,12 @@ Follows iOS Human Interface patterns:
 
 ## Stack
 
-Expo (SDK 57) · React Native · Expo Router · TypeScript · expo-system-ui · expo-document-picker · expo-symbols · expo-haptics · expo-blur
+Expo **SDK 58 beta** · React Native 0.88 RC · Expo Router (stable Native Tabs, Stack.Toolbar, async web routes, `activityEnabled`) · TypeScript · expo-system-ui · expo-document-picker · expo-symbols · expo-haptics · expo-blur · @expo/ui
+
+### SDK 58 router notes
+
+- Native tabs: `expo-router/native-tabs` (stable)
+- Web tabs: `expo-router/js-tabs` inside the iPhone shell
+- Header actions: `Stack.Toolbar` / `Stack.Toolbar.Button`
+- Inactive screens: `activityEnabled` on Stacks
+- Web route splitting: `asyncRoutes.web` enabled via the expo-router plugin
