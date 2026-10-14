@@ -9,7 +9,10 @@ import {
   useWindowDimensions,
   type ColorValue,
 } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
@@ -78,8 +81,106 @@ function StatusBarChrome() {
   );
 }
 
-export default function AppTabs() {
+const TAB_BAR_CONTENT_HEIGHT = 49;
+
+/**
+ * Tab bar that grows into the bottom safe area so the blur/material fills
+ * under the home indicator — matching UITabBar, not a hard cut above it.
+ */
+function PhoneTabs() {
   const { selectedIds } = useMusicStore();
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, HOME_INDICATOR_INSET);
+  const tabBarHeight = TAB_BAR_CONTENT_HEIGHT + bottomInset;
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        sceneStyle: { backgroundColor: colors.groupedBackground },
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.secondaryLabel,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+        },
+        tabBarStyle: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'transparent',
+          borderTopColor: colors.separator,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          elevation: 0,
+          // Include home-indicator inset so the bar (and its background)
+          // extends edge-to-edge under the gesture region.
+          height: tabBarHeight,
+          paddingBottom: bottomInset,
+        },
+        tabBarBackground: () => (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            {/* Solid fallback under blur — web blur is imperfect. */}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: isDark ? 'rgba(28,28,30,0.94)' : 'rgba(249,249,249,0.94)' },
+              ]}
+            />
+            <BlurView
+              intensity={80}
+              tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
+        ),
+      }}
+    >
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: 'Library',
+          tabBarBadge: selectedIds.length || undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.danger,
+            color: colors.onTint as string,
+            fontSize: 11,
+          },
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? 'musical-notes' : 'musical-notes-outline'}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="player"
+        options={{
+          title: 'Player',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? 'phone-portrait' : 'phone-portrait-outline'}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="sync"
+        options={{
+          title: 'Sync',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'sync' : 'sync-outline'} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
+
+export default function AppTabs() {
   const { colors, isDark } = useTheme();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
@@ -109,8 +210,6 @@ export default function AppTabs() {
         {/*
           Nested SafeAreaProvider: the phone shell defines the only safe-area
           insets the navigator should respect (status bar + home indicator).
-          This avoids the root provider (desktop browser = 0) and prevents a
-          second opaque band under the status icons.
         */}
         <SafeAreaProvider
           initialMetrics={{
@@ -123,73 +222,7 @@ export default function AppTabs() {
             },
           }}
         >
-          <Tabs
-            screenOptions={{
-              headerShown: false,
-              sceneStyle: { backgroundColor: colors.groupedBackground },
-              tabBarActiveTintColor: colors.tint,
-              tabBarInactiveTintColor: colors.secondaryLabel,
-              tabBarLabelStyle: {
-                fontSize: 10,
-                fontWeight: '500',
-              },
-              tabBarStyle: {
-                position: 'absolute',
-                backgroundColor: 'transparent',
-                borderTopColor: colors.separator,
-                borderTopWidth: StyleSheet.hairlineWidth,
-                elevation: 0,
-                height: 49,
-              },
-              tabBarBackground: () => (
-                <BlurView
-                  intensity={80}
-                  tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-                  style={StyleSheet.absoluteFill}
-                />
-              ),
-            }}
-          >
-            <Tabs.Screen
-              name="library"
-              options={{
-                title: 'Library',
-                tabBarBadge: selectedIds.length || undefined,
-                tabBarBadgeStyle: {
-                  backgroundColor: colors.danger,
-                  color: colors.onTint as string,
-                  fontSize: 11,
-                },
-                tabBarIcon: ({ color, focused }) => (
-                  <TabIcon
-                    name={focused ? 'musical-notes' : 'musical-notes-outline'}
-                    color={color}
-                  />
-                ),
-              }}
-            />
-            <Tabs.Screen
-              name="player"
-              options={{
-                title: 'Player',
-                tabBarIcon: ({ color, focused }) => (
-                  <TabIcon
-                    name={focused ? 'phone-portrait' : 'phone-portrait-outline'}
-                    color={color}
-                  />
-                ),
-              }}
-            />
-            <Tabs.Screen
-              name="sync"
-              options={{
-                title: 'Sync',
-                tabBarIcon: ({ color, focused }) => (
-                  <TabIcon name={focused ? 'sync' : 'sync-outline'} color={color} />
-                ),
-              }}
-            />
-          </Tabs>
+          <PhoneTabs />
         </SafeAreaProvider>
 
         <StatusBarChrome />
