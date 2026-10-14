@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pad: {
     paddingTop: 8,
-    paddingBottom: 48,
+    paddingBottom: 96,
   },
   block: {
     padding: 16,

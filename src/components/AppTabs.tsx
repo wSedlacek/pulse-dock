@@ -39,9 +39,8 @@ export default function AppTabs() {
       }
       badgeBackgroundColor={tint}
       minimizeBehavior="automatic"
-      disableTransparentOnScrollEdge={false}
     >
-      <NativeTabs.Trigger name="index" disableTransparentOnScrollEdge>
+      <NativeTabs.Trigger name="library" disableTransparentOnScrollEdge>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'music.note.list', selected: 'music.note.list' }}
           md="library_music"

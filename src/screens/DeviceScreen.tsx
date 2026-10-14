@@ -152,7 +152,7 @@ export function DeviceScreen() {
             />
           </View>
         )}
-        ListFooterComponent={<View style={{ height: 48 }} />}
+        ListFooterComponent={<View style={{ height: 88 }} />}
       />
     </View>
   );

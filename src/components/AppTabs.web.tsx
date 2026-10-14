@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Tabs, TabList, TabTrigger, TabSlot, type TabTriggerSlotProps } from 'expo-router/ui';
-import type { ComponentProps, Ref } from 'react';
+import { Tabs } from 'expo-router';
+import type { ComponentProps } from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
+  type ColorValue,
 } from 'react-native';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -18,57 +18,36 @@ type IoniconName = ComponentProps<typeof Ionicons>['name'];
 const IPHONE_WIDTH = 390;
 const IPHONE_HEIGHT = 844;
 
-type TabButtonProps = TabTriggerSlotProps & {
-  label: string;
-  icon: IoniconName;
-  iconActive: IoniconName;
-  badge?: number;
-  ref?: Ref<View>;
-};
-
-function TabButton({
-  label,
-  icon,
-  iconActive,
+function TabIcon({
+  name,
+  color,
   badge,
-  isFocused,
-  ref,
-  ...props
-}: TabButtonProps) {
+}: {
+  name: IoniconName;
+  color: ColorValue;
+  badge?: number;
+}) {
   const { colors } = useTheme();
-
   return (
-    <Pressable {...props} ref={ref} style={styles.tabItem}>
-      <View>
-        <Ionicons
-          name={isFocused ? iconActive : icon}
-          size={24}
-          color={isFocused ? colors.tint : colors.secondaryLabel}
-        />
-        {badge && badge > 0 ? (
-          <View style={[styles.badge, { backgroundColor: colors.danger }]}>
-            <Text style={[typography.caption2, { color: colors.onTint, fontWeight: '700' }]}>
-              {badge > 99 ? '99+' : badge}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-      <Text
-        style={[
-          typography.caption2,
-          { color: isFocused ? colors.tint : colors.secondaryLabel, fontWeight: '500' },
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
+    <View>
+      <Ionicons name={name} size={24} color={color as string} />
+      {badge && badge > 0 ? (
+        <View style={[styles.badge, { backgroundColor: colors.danger }]}>
+          <Text style={[typography.caption2, { color: colors.onTint, fontWeight: '700' }]}>
+            {badge > 99 ? '99+' : badge}
+          </Text>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
 function StatusBarChrome() {
   const { colors, isDark } = useTheme();
-  const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const time = new Date().toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 
   return (
     <View style={styles.statusBar}>
@@ -113,35 +92,71 @@ export default function AppTabs() {
         ]}
       >
         <StatusBarChrome />
-        <Tabs style={styles.tabs}>
-          <TabSlot style={styles.slot} />
-          <View style={styles.tabBarWrap}>
-            <BlurView
-              intensity={80}
-              tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-              style={StyleSheet.absoluteFill}
-            />
-            <TabList style={[styles.tabList, { borderTopColor: colors.separator }]}>
-              <TabTrigger name="index" href="/(tabs)/index" asChild>
-                <TabButton
-                  label="Library"
-                  icon="musical-notes-outline"
-                  iconActive="musical-notes"
-                  badge={selectedIds.length}
+        <Tabs
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: colors.tint,
+            tabBarInactiveTintColor: colors.secondaryLabel,
+            tabBarLabelStyle: {
+              fontSize: 10,
+              fontWeight: '500',
+            },
+            tabBarStyle: {
+              position: 'absolute',
+              backgroundColor: 'transparent',
+              borderTopColor: colors.separator,
+              borderTopWidth: StyleSheet.hairlineWidth,
+              elevation: 0,
+              height: 49,
+            },
+            tabBarBackground: () => (
+              <BlurView
+                intensity={80}
+                tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+                style={StyleSheet.absoluteFill}
+              />
+            ),
+          }}
+        >
+          <Tabs.Screen
+            name="library"
+            options={{
+              title: 'Library',
+              tabBarBadge: selectedIds.length || undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: colors.danger,
+                color: colors.onTint,
+                fontSize: 11,
+              },
+              tabBarIcon: ({ color, focused }) => (
+                <TabIcon
+                  name={focused ? 'musical-notes' : 'musical-notes-outline'}
+                  color={color}
                 />
-              </TabTrigger>
-              <TabTrigger name="player" href="/(tabs)/player" asChild>
-                <TabButton
-                  label="Player"
-                  icon="phone-portrait-outline"
-                  iconActive="phone-portrait"
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="player"
+            options={{
+              title: 'Player',
+              tabBarIcon: ({ color, focused }) => (
+                <TabIcon
+                  name={focused ? 'phone-portrait' : 'phone-portrait-outline'}
+                  color={color}
                 />
-              </TabTrigger>
-              <TabTrigger name="sync" href="/(tabs)/sync" asChild>
-                <TabButton label="Sync" icon="sync-outline" iconActive="sync" />
-              </TabTrigger>
-            </TabList>
-          </View>
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="sync"
+            options={{
+              title: 'Sync',
+              tabBarIcon: ({ color, focused }) => (
+                <TabIcon name={focused ? 'sync' : 'sync-outline'} color={color} />
+              ),
+            }}
+          />
         </Tabs>
         <View style={[styles.homeIndicator, { backgroundColor: colors.label }]} />
       </View>
@@ -180,7 +195,6 @@ const styles = StyleSheet.create({
   island: {
     position: 'absolute',
     top: 11,
-    alignSelf: 'center',
     left: (IPHONE_WIDTH - 126) / 2 - 12,
     width: 126,
     height: 37,
@@ -216,31 +230,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 1,
     width: '70%',
-  },
-  tabs: {
-    flex: 1,
-  },
-  slot: {
-    flex: 1,
-  },
-  tabBarWrap: {
-    overflow: 'hidden',
-  },
-  tabList: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 6,
-    paddingBottom: 8,
-    minHeight: 49,
-  },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    minWidth: 64,
-    paddingVertical: 2,
   },
   badge: {
     position: 'absolute',

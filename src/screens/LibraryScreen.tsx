@@ -147,7 +147,7 @@ export function LibraryScreen() {
             />
           </View>
         )}
-        ListFooterComponent={<View style={{ height: 40 }} />}
+        ListFooterComponent={<View style={{ height: 88 }} />}
       />
     </View>
   );
