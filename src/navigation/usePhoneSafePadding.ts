@@ -1,14 +1,17 @@
 import { Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+/** Matches AppTabs.web StatusBarChrome / Dynamic Island clearance. */
+export const WEB_STATUS_BAR_INSET = 54;
 
 /**
  * Top padding for scroll content inside the web iPhone shell.
+ * Hard-coded on web so we don't depend on nested SafeAreaProvider context
+ * (which can miss screens when navigators wrap portals).
  * On iOS the stack large-title header + contentInsetAdjustmentBehavior handle this.
  */
 export function usePhoneSafePadding() {
-  const insets = useSafeAreaInsets();
   if (Platform.OS !== 'web') {
     return { paddingTop: 8 };
   }
-  return { paddingTop: insets.top + 4 };
+  return { paddingTop: WEB_STATUS_BAR_INSET + 8 };
 }

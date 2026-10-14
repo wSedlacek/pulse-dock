@@ -74,6 +74,7 @@ export function LibraryScreen() {
           data={filtered}
           keyExtractor={(item) => item.id}
           contentInsetAdjustmentBehavior="automatic"
+          style={{ backgroundColor: colors.groupedBackground }}
           contentContainerStyle={[styles.list, safePad]}
           ListHeaderComponent={
             <View style={styles.headerBlock}>

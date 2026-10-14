@@ -25,6 +25,7 @@ export function DeviceScreen() {
         data={onDeviceTracks}
         keyExtractor={(item) => item!.id}
         contentInsetAdjustmentBehavior="automatic"
+        style={{ backgroundColor: colors.groupedBackground }}
         contentContainerStyle={[styles.list, safePad]}
         ListHeaderComponent={
           <View>

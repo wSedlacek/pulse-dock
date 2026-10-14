@@ -59,7 +59,10 @@ function StatusBarChrome() {
   });
 
   return (
-    <View pointerEvents="none" style={styles.statusBar}>
+    <View
+      pointerEvents="none"
+      style={[styles.statusBar, { backgroundColor: colors.groupedBackground }]}
+    >
       <Text style={[typography.caption1, { color: colors.label, fontWeight: '600' }]}>
         {time}
       </Text>
@@ -230,8 +233,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     zIndex: 30,
-    // Transparent — grouped background / large-title header show through.
-    backgroundColor: 'transparent',
   },
   island: {
     position: 'absolute',

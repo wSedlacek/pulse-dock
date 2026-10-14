@@ -46,6 +46,7 @@ export function SyncScreen() {
     <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        style={{ backgroundColor: colors.groupedBackground }}
         contentContainerStyle={[styles.pad, safePad]}
       >
         <View style={styles.titlePad}>
