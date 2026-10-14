@@ -1,7 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs, TabList, TabTrigger, TabSlot, type TabTriggerSlotProps } from 'expo-router/ui';
 import type { ComponentProps, Ref } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -9,6 +15,7 @@ type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 const IPHONE_WIDTH = 390;
 const IPHONE_HEIGHT = 844;
+const NOTCH_CLEARANCE = 44;
 
 type TabButtonProps = TabTriggerSlotProps & {
   label: string;
@@ -60,9 +67,19 @@ function TabButton({
 export default function AppTabs() {
   const { selectedIds } = useMusicStore();
   const { colors, isDark } = useTheme();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   return (
-    <View style={[styles.desk, { backgroundColor: colors.desk }]}>
+    <View
+      style={[
+        styles.desk,
+        {
+          backgroundColor: colors.desk,
+          minHeight: windowHeight,
+          width: windowWidth,
+        },
+      ]}
+    >
       <View
         style={[
           styles.phone,
@@ -72,9 +89,11 @@ export default function AppTabs() {
           },
         ]}
       >
-        <View style={styles.notch} />
+        <View pointerEvents="none" style={styles.island} />
         <Tabs style={styles.tabs}>
-          <TabSlot style={styles.slot} />
+          <View style={[styles.slotWrap, { paddingTop: NOTCH_CLEARANCE }]}>
+            <TabSlot style={styles.slot} />
+          </View>
           <TabList
             style={[
               styles.tabList,
@@ -119,7 +138,7 @@ const styles = StyleSheet.create({
   phone: {
     width: IPHONE_WIDTH,
     height: IPHONE_HEIGHT,
-    maxHeight: '100%',
+    maxHeight: '96%',
     borderRadius: 44,
     borderWidth: 10,
     overflow: 'hidden',
@@ -128,17 +147,20 @@ const styles = StyleSheet.create({
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 18 },
   },
-  notch: {
+  island: {
     position: 'absolute',
-    top: 10,
-    width: 120,
-    height: 28,
-    borderRadius: 18,
+    top: 12,
+    width: 118,
+    height: 34,
+    borderRadius: 20,
     zIndex: 20,
-    left: (IPHONE_WIDTH - 120) / 2 - 10,
-    backgroundColor: '#111',
+    left: (IPHONE_WIDTH - 118) / 2 - 10,
+    backgroundColor: '#0A0A0A',
   },
   tabs: {
+    flex: 1,
+  },
+  slotWrap: {
     flex: 1,
   },
   slot: {
