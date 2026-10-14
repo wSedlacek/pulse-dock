@@ -1,17 +1,21 @@
 import { Stack } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
 import { LargeTitle } from '../components/LargeTitle';
+import {
+  PullToRevealSearch,
+  usePullToRevealSearch,
+} from '../components/PullToRevealSearch';
 import { TrackRow } from '../components/TrackRow';
 import { usePhoneSafePadding } from '../navigation/usePhoneSafePadding';
 import { importHint } from '../services/importTracks';
@@ -33,6 +37,7 @@ export function LibraryScreen() {
   const safePad = usePhoneSafePadding();
   const [query, setQuery] = useState('');
   const [importing, setImporting] = useState(false);
+  const pullSearch = usePullToRevealSearch(Platform.OS === 'web');
 
   const onImport = async () => {
     if (Platform.OS === 'ios') void Haptics.selectionAsync();
@@ -43,6 +48,13 @@ export function LibraryScreen() {
       setImporting(false);
     }
   };
+
+  const onNativeSearchChange = useCallback(
+    (event: NativeSyntheticEvent<{ text: string }>) => {
+      setQuery(event.nativeEvent.text);
+    },
+    [],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,6 +69,21 @@ export function LibraryScreen() {
 
   return (
     <>
+      {Platform.OS === 'ios' || Platform.OS === 'android' ? (
+        <Stack.SearchBar
+          placeholder="Search"
+          hideWhenScrolling
+          placement="stacked"
+          autoCapitalize="none"
+          tintColor={colors.tint}
+          textColor={colors.label}
+          hintTextColor={colors.tertiaryLabel}
+          barTintColor={colors.fill}
+          onChangeText={onNativeSearchChange}
+          onCancelButtonPress={() => setQuery('')}
+        />
+      ) : null}
+
       {Platform.OS === 'ios' ? (
         <Stack.Toolbar placement="right">
           <Stack.Toolbar.Button
@@ -74,6 +101,10 @@ export function LibraryScreen() {
           data={filtered}
           keyExtractor={(item) => item.id}
           contentInsetAdjustmentBehavior="automatic"
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          onScroll={Platform.OS === 'web' ? pullSearch.onScroll : undefined}
           style={{ backgroundColor: colors.groupedBackground }}
           contentContainerStyle={[styles.list, safePad]}
           ListHeaderComponent={
@@ -84,23 +115,19 @@ export function LibraryScreen() {
               </Text>
 
               {Platform.OS === 'web' ? (
-                <IOSButton
-                  label={importing ? 'Importing…' : 'Import MP3s'}
-                  onPress={() => void onImport()}
-                  loading={importing}
-                />
+                <>
+                  <PullToRevealSearch
+                    value={query}
+                    onChangeText={setQuery}
+                    height={pullSearch.height}
+                  />
+                  <IOSButton
+                    label={importing ? 'Importing…' : 'Import MP3s'}
+                    onPress={() => void onImport()}
+                    loading={importing}
+                  />
+                </>
               ) : null}
-
-              <View style={[styles.search, { backgroundColor: colors.fill }]}>
-                <TextInput
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Search"
-                  placeholderTextColor={colors.tertiaryLabel}
-                  clearButtonMode="while-editing"
-                  style={[typography.body, styles.searchInput, { color: colors.label }]}
-                />
-              </View>
 
               <View style={styles.toolbar}>
                 <IOSButton
@@ -121,17 +148,28 @@ export function LibraryScreen() {
                 style={[typography.footnote, styles.count, { color: colors.secondaryLabel }]}
               >
                 {selectedIds.length} selected · {tracks.length} in library
+                {query.trim() ? ` · ${filtered.length} matches` : ''}
               </Text>
             </View>
           }
           ListEmptyComponent={
-            <GroupedSection footer="Import MP3s from Files or iCloud to build your host library.">
+            <GroupedSection
+              footer={
+                query.trim()
+                  ? 'Try a different name, artist, or album.'
+                  : 'Import MP3s from Files or iCloud to build your host library.'
+              }
+            >
               <View style={styles.empty}>
-                <Text style={[typography.headline, { color: colors.label }]}>No Songs</Text>
+                <Text style={[typography.headline, { color: colors.label }]}>
+                  {query.trim() ? 'No Matches' : 'No Songs'}
+                </Text>
                 <Text
                   style={[typography.subhead, { color: colors.secondaryLabel, marginTop: 4 }]}
                 >
-                  Tap Import in the top-right to add MP3s.
+                  {query.trim()
+                    ? `Nothing matches “${query.trim()}”.`
+                    : 'Tap Import in the top-right to add MP3s.'}
                 </Text>
               </View>
             </GroupedSection>
@@ -174,15 +212,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     gap: 12,
-  },
-  search: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    minHeight: 36,
-    justifyContent: 'center',
-  },
-  searchInput: {
-    paddingVertical: 8,
   },
   toolbar: {
     flexDirection: 'row',
