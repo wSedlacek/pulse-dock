@@ -43,6 +43,7 @@ type MusicStoreValue = {
   importTracks: () => Promise<void>;
   removeTrack: (id: string) => void;
   toggleSelected: (id: string) => void;
+  setSelection: (ids: string[]) => void;
   selectAll: () => void;
   clearSelection: () => void;
   connectDemoPlayer: () => void;
@@ -192,6 +193,10 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  }, []);
+
+  const setSelection = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
   }, []);
 
   const selectAll = useCallback(() => {
@@ -399,6 +404,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
       importTracks,
       removeTrack,
       toggleSelected,
+      setSelection,
       selectAll,
       clearSelection,
       connectDemoPlayer,
@@ -417,6 +423,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
       importTracks,
       removeTrack,
       toggleSelected,
+      setSelection,
       selectAll,
       clearSelection,
       connectDemoPlayer,

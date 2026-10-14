@@ -1,14 +1,15 @@
 import { Stack } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
-  FlatList,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   View,
   type NativeSyntheticEvent,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { FlatList } from 'react-native-gesture-handler';
 import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
 import { LargeTitle } from '../components/LargeTitle';
@@ -30,13 +31,13 @@ export function LibraryScreen() {
     importTracks,
     removeTrack,
     toggleSelected,
-    selectAll,
-    clearSelection,
+    setSelection,
   } = useMusicStore();
   const { colors } = useTheme();
   const safePad = usePhoneSafePadding();
   const [query, setQuery] = useState('');
   const [importing, setImporting] = useState(false);
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const pullSearch = usePullToRevealSearch(Platform.OS === 'web');
 
   const onImport = async () => {
@@ -66,6 +67,20 @@ export function LibraryScreen() {
         t.album.toLowerCase().includes(q),
     );
   }, [tracks, query]);
+
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((t) => selectedIds.includes(t.id));
+
+  const onSelectAllPress = () => {
+    if (Platform.OS === 'ios') void Haptics.selectionAsync();
+    const visibleIds = filtered.map((t) => t.id);
+    if (allFilteredSelected) {
+      const visible = new Set(visibleIds);
+      setSelection(selectedIds.filter((id) => !visible.has(id)));
+    } else {
+      setSelection([...new Set([...selectedIds, ...visibleIds])]);
+    }
+  };
 
   return (
     <>
@@ -105,6 +120,7 @@ export function LibraryScreen() {
           keyboardShouldPersistTaps="handled"
           scrollEventThrottle={16}
           onScroll={Platform.OS === 'web' ? pullSearch.onScroll : undefined}
+          onScrollBeginDrag={() => setOpenSwipeId(null)}
           style={{ backgroundColor: colors.groupedBackground }}
           contentContainerStyle={[styles.list, safePad]}
           ListHeaderComponent={
@@ -129,27 +145,23 @@ export function LibraryScreen() {
                 </>
               ) : null}
 
-              <View style={styles.toolbar}>
-                <IOSButton
-                  label="Select All"
-                  variant="tinted"
-                  onPress={selectAll}
-                  style={styles.toolBtn}
-                />
-                <IOSButton
-                  label="Clear"
-                  variant="gray"
-                  onPress={clearSelection}
-                  style={styles.toolBtn}
-                />
+              {/* Native-style edit chrome: plain tint text, not chunky buttons */}
+              <View style={styles.selectBar}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={onSelectAllPress}
+                  hitSlop={8}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.35 : 1 }]}
+                >
+                  <Text style={[typography.body, { color: colors.tint }]}>
+                    {allFilteredSelected ? 'Deselect All' : 'Select All'}
+                  </Text>
+                </Pressable>
+                <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
+                  {selectedIds.length} of {tracks.length} for sync
+                  {query.trim() ? ` · ${filtered.length} shown` : ''}
+                </Text>
               </View>
-
-              <Text
-                style={[typography.footnote, styles.count, { color: colors.secondaryLabel }]}
-              >
-                {selectedIds.length} selected · {tracks.length} in library
-                {query.trim() ? ` · ${filtered.length} matches` : ''}
-              </Text>
             </View>
           }
           ListEmptyComponent={
@@ -192,10 +204,12 @@ export function LibraryScreen() {
                 onRemove={item.isDemo ? undefined : () => removeTrack(item.id)}
                 trailingLabel={item.isDemo ? 'Sample' : undefined}
                 showSeparator={index < filtered.length - 1}
+                swipeOpenId={openSwipeId}
+                onSwipeOpenChange={setOpenSwipeId}
               />
             </View>
           )}
-          ListFooterComponent={<View style={{ height: 88 }} />}
+          ListFooterComponent={<View style={{ height: 100 }} />}
         />
       </View>
     </>
@@ -213,16 +227,12 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 12,
   },
-  toolbar: {
+  selectBar: {
     flexDirection: 'row',
-    gap: 10,
-  },
-  toolBtn: {
-    flex: 1,
-    minHeight: 44,
-  },
-  count: {
-    marginLeft: 4,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 36,
+    paddingRight: 4,
   },
   firstRow: {
     borderTopLeftRadius: 12,
