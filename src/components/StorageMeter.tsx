@@ -1,11 +1,11 @@
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 import { formatBytes } from '../utils/format';
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function StorageMeter({ usedBytes, capacityBytes, label }: Props) {
+  const { colors } = useTheme();
   const ratio = capacityBytes > 0 ? Math.min(1, usedBytes / capacityBytes) : 0;
   const width = useSharedValue(0);
 
@@ -29,13 +30,17 @@ export function StorageMeter({ usedBytes, capacityBytes, label }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <Text style={styles.label}>{label ?? 'Player storage'}</Text>
-        <Text style={styles.value}>
+        <Text style={[styles.label, { color: colors.mist }]}>
+          {label ?? 'Player storage'}
+        </Text>
+        <Text style={[styles.value, { color: colors.chalkDim }]}>
           {formatBytes(usedBytes)} / {formatBytes(capacityBytes)}
         </Text>
       </View>
-      <View style={styles.track}>
-        <Animated.View style={[styles.fill, fillStyle]} />
+      <View style={[styles.track, { backgroundColor: colors.line }]}>
+        <Animated.View
+          style={[styles.fill, { backgroundColor: colors.accent }, fillStyle]}
+        />
       </View>
     </View>
   );
@@ -53,22 +58,18 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: 'IBMPlexSans_400Regular',
     fontSize: 12,
-    color: colors.mist,
   },
   value: {
     fontFamily: 'IBMPlexSans_500Medium',
     fontSize: 12,
-    color: colors.chalkDim,
   },
   track: {
     height: 8,
     borderRadius: 999,
-    backgroundColor: 'rgba(232, 241, 247, 0.08)',
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
     borderRadius: 999,
-    backgroundColor: colors.led,
   },
 });

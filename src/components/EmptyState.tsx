@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 import { PrimaryButton } from './PrimaryButton';
 
 type Props = {
@@ -10,10 +10,12 @@ type Props = {
 };
 
 export function EmptyState({ title, body, actionLabel, onAction }: Props) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.body}>{body}</Text>
+      <Text style={[styles.title, { color: colors.chalk }]}>{title}</Text>
+      <Text style={[styles.body, { color: colors.mist }]}>{body}</Text>
       {actionLabel && onAction ? (
         <PrimaryButton label={actionLabel} onPress={onAction} style={styles.btn} />
       ) : null}
@@ -31,13 +33,11 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Syne_700Bold',
     fontSize: 22,
-    color: colors.chalk,
   },
   body: {
     fontFamily: 'IBMPlexSans_400Regular',
     fontSize: 14,
     lineHeight: 21,
-    color: colors.mist,
     maxWidth: 320,
   },
   btn: {

@@ -14,7 +14,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { TrackRow } from '../components/TrackRow';
 import { importHint } from '../services/importTracks';
 import { useMusicStore } from '../store/MusicStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 export function LibraryScreen() {
   const {
@@ -26,6 +26,7 @@ export function LibraryScreen() {
     selectAll,
     clearSelection,
   } = useMusicStore();
+  const { colors } = useTheme();
   const [query, setQuery] = useState('');
   const [importing, setImporting] = useState(false);
 
@@ -53,10 +54,7 @@ export function LibraryScreen() {
     <Atmosphere>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.pad}>
-          <BrandHeader
-            title="Your host library"
-            subtitle={importHint()}
-          />
+          <BrandHeader title="Your host library" subtitle={importHint()} />
 
           <View style={styles.actions}>
             <PrimaryButton
@@ -84,10 +82,17 @@ export function LibraryScreen() {
             onChangeText={setQuery}
             placeholder="Search title or artist"
             placeholderTextColor={colors.mist}
-            style={styles.search}
+            style={[
+              styles.search,
+              {
+                borderColor: colors.line,
+                backgroundColor: colors.inkElevated,
+                color: colors.chalk,
+              },
+            ]}
           />
 
-          <Text style={styles.count}>
+          <Text style={[styles.count, { color: colors.mist }]}>
             {selectedIds.length} selected for sync · {tracks.length} in library
           </Text>
         </View>
@@ -133,12 +138,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   search: {
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: 'rgba(14, 26, 38, 0.75)',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: colors.chalk,
     fontFamily: 'IBMPlexSans_400Regular',
     fontSize: 14,
     marginBottom: 10,
@@ -146,7 +148,6 @@ const styles = StyleSheet.create({
   count: {
     fontFamily: 'IBMPlexSans_400Regular',
     fontSize: 12,
-    color: colors.mist,
     marginBottom: 6,
   },
   list: {

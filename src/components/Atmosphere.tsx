@@ -1,19 +1,20 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 export function Atmosphere({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.ink }]}>
       <LinearGradient
         colors={[colors.washTop, colors.washMid, colors.washBottom]}
         locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.orbA} />
-      <View style={styles.orbB} />
-      <View style={styles.grain} />
+      <View style={[styles.orbA, { backgroundColor: colors.orbA }]} />
+      <View style={[styles.orbB, { backgroundColor: colors.orbB }]} />
       {children}
     </View>
   );
@@ -22,7 +23,6 @@ export function Atmosphere({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.ink,
   },
   orbA: {
     position: 'absolute',
@@ -31,7 +31,6 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: 'rgba(61, 255, 200, 0.08)',
   },
   orbB: {
     position: 'absolute',
@@ -40,13 +39,5 @@ const styles = StyleSheet.create({
     width: 280,
     height: 280,
     borderRadius: 140,
-    backgroundColor: 'rgba(255, 179, 71, 0.05)',
-  },
-  grain: {
-    ...StyleSheet.absoluteFill,
-    opacity: 0.04,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.02)',
   },
 });

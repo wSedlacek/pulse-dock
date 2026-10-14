@@ -7,11 +7,12 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { StorageMeter } from '../components/StorageMeter';
 import { TrackRow } from '../components/TrackRow';
 import { useMusicStore } from '../store/MusicStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 export function DeviceScreen() {
   const { device, libraryById, connectDemoPlayer, disconnectPlayer, resetDemoData } =
     useMusicStore();
+  const { colors } = useTheme();
 
   const onDeviceTracks = (device?.trackIds ?? [])
     .map((id) => libraryById.get(id))
@@ -27,15 +28,32 @@ export function DeviceScreen() {
           />
 
           {device?.connected ? (
-            <View style={styles.panel}>
+            <View
+              style={[
+                styles.panel,
+                {
+                  borderColor: colors.line,
+                  backgroundColor: colors.inkElevated,
+                },
+              ]}
+            >
               <View style={styles.panelTop}>
                 <View>
-                  <Text style={styles.deviceName}>{device.name}</Text>
-                  <Text style={styles.deviceModel}>{device.model}</Text>
+                  <Text style={[styles.deviceName, { color: colors.chalk }]}>
+                    {device.name}
+                  </Text>
+                  <Text style={[styles.deviceModel, { color: colors.mist }]}>
+                    {device.model}
+                  </Text>
                 </View>
-                <View style={styles.livePill}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>
+                <View
+                  style={[
+                    styles.livePill,
+                    { backgroundColor: colors.glow },
+                  ]}
+                >
+                  <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
+                  <Text style={[styles.liveText, { color: colors.accent }]}>
                     {device.isDemo ? 'Demo link' : 'Linked'}
                   </Text>
                 </View>
@@ -46,7 +64,7 @@ export function DeviceScreen() {
                 capacityBytes={device.capacityBytes}
               />
 
-              <Text style={styles.meta}>
+              <Text style={[styles.meta, { color: colors.chalkDim }]}>
                 {device.trackIds.length} songs on player
                 {device.lastSyncedAt
                   ? ` · last sync ${new Date(device.lastSyncedAt).toLocaleString()}`
@@ -69,7 +87,15 @@ export function DeviceScreen() {
               </View>
             </View>
           ) : (
-            <View style={styles.panel}>
+            <View
+              style={[
+                styles.panel,
+                {
+                  borderColor: colors.line,
+                  backgroundColor: colors.inkElevated,
+                },
+              ]}
+            >
               <EmptyState
                 title="No player connected"
                 body="Connect a mass-storage MP3 player over USB-C, then manage its music from this host. Until hardware is plugged in, use the demo player to rehearse sync sets."
@@ -79,7 +105,7 @@ export function DeviceScreen() {
             </View>
           )}
 
-          <Text style={styles.section}>On this player</Text>
+          <Text style={[styles.section, { color: colors.chalk }]}>On this player</Text>
         </View>
 
         <FlatList
@@ -88,7 +114,7 @@ export function DeviceScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.pad}>
-              <Text style={styles.emptyCopy}>
+              <Text style={[styles.emptyCopy, { color: colors.mist }]}>
                 Nothing on the player yet. Pick songs in Library, then run Sync.
               </Text>
             </View>
@@ -110,8 +136,6 @@ const styles = StyleSheet.create({
   },
   panel: {
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: 'rgba(14, 26, 38, 0.72)',
     borderRadius: 18,
     padding: 16,
     marginBottom: 22,
@@ -126,12 +150,10 @@ const styles = StyleSheet.create({
   deviceName: {
     fontFamily: 'Syne_700Bold',
     fontSize: 22,
-    color: colors.chalk,
   },
   deviceModel: {
     fontFamily: 'IBMPlexSans_400Regular',
     fontSize: 13,
-    color: colors.mist,
     marginTop: 2,
   },
   livePill: {
@@ -141,25 +163,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(61, 255, 200, 0.12)',
   },
   liveDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: colors.led,
   },
   liveText: {
     fontFamily: 'IBMPlexSans_500Medium',
     fontSize: 11,
-    color: colors.led,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   meta: {
     fontFamily: 'IBMPlexSans_400Regular',
     fontSize: 12,
-    color: colors.chalkDim,
   },
   actions: {
     flexDirection: 'row',
@@ -169,7 +187,6 @@ const styles = StyleSheet.create({
   section: {
     fontFamily: 'IBMPlexSans_600SemiBold',
     fontSize: 13,
-    color: colors.chalk,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 4,
@@ -180,7 +197,6 @@ const styles = StyleSheet.create({
   emptyCopy: {
     fontFamily: 'IBMPlexSans_400Regular',
     fontSize: 14,
-    color: colors.mist,
     lineHeight: 20,
   },
 });

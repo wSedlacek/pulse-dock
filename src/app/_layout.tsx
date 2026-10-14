@@ -14,9 +14,26 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MusicStoreProvider } from '../store/MusicStore';
-import { colors } from '../theme/colors';
+import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
+import { colors as bootColors } from '../theme/colors';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+function RootNavigator() {
+  const { colors, isDark } = useTheme();
+
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { flex: 1, backgroundColor: colors.ink },
+        }}
+      />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -36,7 +53,7 @@ export default function RootLayout() {
   if (!fontsLoaded) {
     return (
       <View style={styles.boot}>
-        <ActivityIndicator color={colors.led} size="large" />
+        <ActivityIndicator color={bootColors.accent} size="large" />
       </View>
     );
   }
@@ -44,20 +61,21 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaProvider>
-        <MusicStoreProvider>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: styles.flex }} />
-        </MusicStoreProvider>
+        <ThemeProvider>
+          <MusicStoreProvider>
+            <RootNavigator />
+          </MusicStoreProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.ink },
+  flex: { flex: 1 },
   boot: {
     flex: 1,
-    backgroundColor: colors.ink,
+    backgroundColor: bootColors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },

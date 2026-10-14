@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "pulsedock",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -20,13 +20,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#071018",
+        "backgroundColor": "#071225",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.pulsedock.app",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "userInterfaceStyle": "automatic"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -36,10 +37,11 @@
       "expo-router",
       "expo-font",
       "expo-sharing",
+      "expo-system-ui",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#071018",
+          "backgroundColor": "#071225",
           "image": "./assets/splash-icon.png"
         }
       ]
