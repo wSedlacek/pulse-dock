@@ -77,6 +77,14 @@ export function LibraryScreen() {
                 {importHint()}
               </Text>
 
+              {Platform.OS === 'web' ? (
+                <IOSButton
+                  label={importing ? 'Importing…' : 'Import MP3s'}
+                  onPress={() => void onImport()}
+                  loading={importing}
+                />
+              ) : null}
+
               <View style={[styles.search, { backgroundColor: colors.fill }]}>
                 <TextInput
                   value={query}
