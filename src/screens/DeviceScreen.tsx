@@ -64,6 +64,7 @@ export function DeviceScreen() {
                   </Text>
                   <IOSButton
                     label="Link USB Music Folder"
+                    size="large"
                     onPress={() => void linkUsbPlayer()}
                   />
                 </View>
@@ -130,6 +131,7 @@ export function DeviceScreen() {
                     <IOSButton
                       label="Disconnect"
                       variant="plain"
+                      size="small"
                       onPress={disconnectPlayer}
                       style={styles.half}
                     />
@@ -138,6 +140,7 @@ export function DeviceScreen() {
                       <IOSButton
                         label="Reset Demo"
                         variant="plain"
+                        size="small"
                         onPress={() => void resetDemoData()}
                         style={styles.half}
                       />
@@ -145,6 +148,7 @@ export function DeviceScreen() {
                       <IOSButton
                         label="Re-link"
                         variant="plain"
+                        size="small"
                         onPress={() => void linkUsbPlayer()}
                         style={styles.half}
                       />
@@ -156,6 +160,7 @@ export function DeviceScreen() {
                   <View style={styles.ctaPad}>
                     <IOSButton
                       label="Link USB Music Folder"
+                      size="large"
                       onPress={() => void linkUsbPlayer()}
                     />
                   </View>
@@ -190,6 +195,7 @@ export function DeviceScreen() {
                   {usbSupported ? (
                     <IOSButton
                       label="Link USB Music Folder"
+                      size="large"
                       onPress={() => void linkUsbPlayer()}
                     />
                   ) : null}
@@ -197,6 +203,7 @@ export function DeviceScreen() {
                   <IOSButton
                     label="Connect Demo Player"
                     variant={usbSupported ? 'gray' : 'filled'}
+                    size={usbSupported ? 'medium' : 'large'}
                     onPress={connectDemoPlayer}
                   />
                 </View>

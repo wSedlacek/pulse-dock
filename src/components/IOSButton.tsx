@@ -5,6 +5,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
@@ -15,9 +16,39 @@ type Props = {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
+  /**
+   * Visual weight — mirrors UIKit button configurations.
+   * Prefer one `filled` primary per screen.
+   */
   variant?: 'filled' | 'tinted' | 'gray' | 'plain' | 'destructive';
+  /**
+   * Control size — mirrors `.controlSize`:
+   * large ≈ 50pt (full-width CTA), medium ≈ 44pt, small ≈ 34pt.
+   */
+  size?: 'large' | 'medium' | 'small';
   style?: ViewStyle;
 };
+
+const SIZE = {
+  large: {
+    minHeight: 50,
+    radius: 12,
+    padH: 16,
+    label: typography.headline as TextStyle,
+  },
+  medium: {
+    minHeight: 44,
+    radius: 10,
+    padH: 14,
+    label: typography.body as TextStyle,
+  },
+  small: {
+    minHeight: 34,
+    radius: 8,
+    padH: 12,
+    label: { ...typography.subhead, fontWeight: '600' } as TextStyle,
+  },
+} as const;
 
 export function IOSButton({
   label,
@@ -25,9 +56,11 @@ export function IOSButton({
   disabled,
   loading,
   variant = 'filled',
+  size = 'medium',
   style,
 }: Props) {
   const { colors } = useTheme();
+  const metrics = SIZE[size];
 
   const bg =
     variant === 'filled'
@@ -59,14 +92,20 @@ export function IOSButton({
       }}
       style={({ pressed }) => [
         styles.base,
-        { backgroundColor: bg, opacity: pressed || disabled || loading ? 0.55 : 1 },
+        {
+          backgroundColor: bg,
+          minHeight: metrics.minHeight,
+          borderRadius: metrics.radius,
+          paddingHorizontal: metrics.padH,
+          opacity: pressed || disabled || loading ? 0.55 : 1,
+        },
         style,
       ]}
     >
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
-        <Text style={[typography.headline, { color: fg }]}>{label}</Text>
+        <Text style={[metrics.label, { color: fg }]}>{label}</Text>
       )}
     </Pressable>
   );
@@ -74,9 +113,6 @@ export function IOSButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 50,
-    borderRadius: 12,
-    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -72,6 +72,7 @@ export function SyncScreen() {
               {usbSupported ? (
                 <IOSButton
                   label="Link USB Music Folder"
+                  size="large"
                   onPress={() => void linkUsbPlayer()}
                 />
               ) : null}
@@ -79,6 +80,7 @@ export function SyncScreen() {
               <IOSButton
                 label="Connect Demo Player"
                 variant={usbSupported ? 'gray' : 'filled'}
+                size={usbSupported ? 'medium' : 'large'}
                 onPress={connectDemoPlayer}
               />
             </View>
@@ -203,6 +205,7 @@ export function SyncScreen() {
                       ? 'Run Demo Sync'
                       : 'Copy Files to USB'
                 }
+                size="large"
                 onPress={() => void onSync()}
                 loading={syncProgress.active}
                 disabled={!device.connected}

@@ -139,6 +139,7 @@ export function LibraryScreen() {
                   />
                   <IOSButton
                     label={importing ? 'Importing…' : 'Import MP3s'}
+                    size="large"
                     onPress={() => void onImport()}
                     loading={importing}
                   />
