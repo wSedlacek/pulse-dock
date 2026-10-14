@@ -1,4 +1,4 @@
-import { SyncScreen } from '../../screens/SyncScreen';
+import { SyncScreen } from '../../../screens/SyncScreen';
 
 export default function SyncRoute() {
   return <SyncScreen />;

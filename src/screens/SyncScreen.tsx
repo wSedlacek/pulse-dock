@@ -1,164 +1,162 @@
-import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Atmosphere } from '../components/Atmosphere';
-import { BrandHeader } from '../components/BrandHeader';
-import { PrimaryButton } from '../components/PrimaryButton';
+import { useNavigation } from 'expo-router';
+import { useLayoutEffect, useMemo } from 'react';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { GroupedSection } from '../components/GroupedSection';
+import { IOSButton } from '../components/IOSButton';
 import { StorageMeter } from '../components/StorageMeter';
 import { useMusicStore, useSyncSummary } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
+import { typography } from '../theme/typography';
 import { formatBytes } from '../utils/format';
 
 export function SyncScreen() {
+  const navigation = useNavigation();
   const { device, libraryById, syncProgress, runSync, connectDemoPlayer } =
     useMusicStore();
   const { plan, addBytes, removeBytes, keepBytes } = useSyncSummary();
   const { colors } = useTheme();
 
-  const counts = useMemo(() => {
-    return {
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: 'Sync' });
+  }, [navigation]);
+
+  const counts = useMemo(
+    () => ({
       add: plan.filter((p) => p.action === 'add').length,
       remove: plan.filter((p) => p.action === 'remove').length,
       keep: plan.filter((p) => p.action === 'keep').length,
-    };
-  }, [plan]);
+    }),
+    [plan],
+  );
 
   const projectedUsed = keepBytes + addBytes;
   const progressRatio =
     syncProgress.total > 0 ? syncProgress.completed / syncProgress.total : 0;
+  const queue = plan.filter((p) => p.action !== 'keep').slice(0, 12);
 
-  const panelStyle = [
-    styles.panel,
-    {
-      borderColor: colors.line,
-      backgroundColor: colors.inkElevated,
-    },
-  ];
+  const onSync = async () => {
+    if (Platform.OS === 'ios') {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    await runSync();
+    if (Platform.OS === 'ios') {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
 
   return (
-    <Atmosphere>
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.pad}>
-          <BrandHeader
-            title="Push the sync set"
-            subtitle="The iPhone stays the source of truth. PulseDock copies selected songs to the player and removes anything left out of the set."
-          />
-
-          {!device?.connected ? (
-            <View style={panelStyle}>
-              <Text style={[styles.panelTitle, { color: colors.chalk }]}>
-                Player offline
-              </Text>
-              <Text style={[styles.panelBody, { color: colors.mist }]}>
-                Connect your USB MP3 player or use the demo Nomad Clip to preview a
-                transfer.
-              </Text>
-              <PrimaryButton
-                label="Connect demo player"
-                onPress={connectDemoPlayer}
-                style={styles.mt}
-              />
+    <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.pad}
+      >
+        {!device?.connected ? (
+          <GroupedSection
+            header="Player Offline"
+            footer="Connect your USB MP3 player or use the demo Nomad Clip to preview a transfer."
+          >
+            <View style={styles.block}>
+              <IOSButton label="Connect Demo Player" onPress={connectDemoPlayer} />
             </View>
-          ) : (
-            <>
-              <Animated.View entering={FadeInDown.duration(450)} style={panelStyle}>
-                <Text style={[styles.panelTitle, { color: colors.chalk }]}>
-                  Sync plan → {device.name}
-                </Text>
-                <View style={styles.statRow}>
-                  <Stat label="Add" value={String(counts.add)} accent={colors.accent} />
-                  <Stat
-                    label="Remove"
-                    value={String(counts.remove)}
-                    accent={colors.danger}
-                  />
-                  <Stat
-                    label="Keep"
-                    value={String(counts.keep)}
-                    accent={colors.amber}
-                  />
-                </View>
-                <Text style={[styles.panelBody, { color: colors.mist }]}>
-                  Transfer {formatBytes(addBytes)} · free {formatBytes(removeBytes)} ·
-                  keep {formatBytes(keepBytes)}
-                </Text>
+          </GroupedSection>
+        ) : (
+          <>
+            <GroupedSection
+              header={`Sync Plan → ${device.name}`}
+              footer={`Transfer ${formatBytes(addBytes)} · free ${formatBytes(removeBytes)} · keep ${formatBytes(keepBytes)}`}
+            >
+              <View style={styles.stats}>
+                <Stat label="Add" value={counts.add} color={colors.tint} />
+                <View style={[styles.statSep, { backgroundColor: colors.separator }]} />
+                <Stat label="Remove" value={counts.remove} color={colors.danger} />
+                <View style={[styles.statSep, { backgroundColor: colors.separator }]} />
+                <Stat label="Keep" value={counts.keep} color={colors.orange} />
+              </View>
+              <View style={[styles.meterWrap, { borderTopColor: colors.separator }]}>
                 <StorageMeter
                   usedBytes={projectedUsed}
                   capacityBytes={device.capacityBytes}
-                  label="Projected after sync"
+                  label="After Sync"
                 />
-              </Animated.View>
+              </View>
+            </GroupedSection>
 
-              <Animated.View
-                entering={FadeInDown.delay(80).duration(450)}
-                style={panelStyle}
-              >
-                <Text style={[styles.panelTitle, { color: colors.chalk }]}>
-                  Transfer queue
-                </Text>
-                {plan.filter((p) => p.action !== 'keep').length === 0 ? (
-                  <Text style={[styles.panelBody, { color: colors.mist }]}>
-                    Host selection already matches the player. Run sync to refresh the
-                    timestamp, or change the library selection.
+            <GroupedSection
+              header="Transfer Queue"
+              footer={
+                queue.length === 0
+                  ? 'Selection already matches the player.'
+                  : 'Songs marked Add are copied; Remove deletes them from the player.'
+              }
+            >
+              {queue.length === 0 ? (
+                <View style={styles.block}>
+                  <Text style={[typography.body, { color: colors.secondaryLabel }]}>
+                    Already in sync
                   </Text>
-                ) : (
-                  plan
-                    .filter((p) => p.action !== 'keep')
-                    .slice(0, 12)
-                    .map((item) => {
-                      const track = libraryById.get(item.trackId);
-                      return (
-                        <View
-                          key={`${item.action}-${item.trackId}`}
-                          style={[styles.queueRow, { borderBottomColor: colors.line }]}
-                        >
-                          <Text
-                            style={[
-                              styles.queueAction,
-                              {
-                                color:
-                                  item.action === 'add' ? colors.accent : colors.danger,
-                              },
-                            ]}
-                          >
-                            {item.action === 'add' ? 'ADD' : 'RM'}
-                          </Text>
-                          <Text
-                            style={[styles.queueTitle, { color: colors.chalk }]}
-                            numberOfLines={1}
-                          >
-                            {track?.title ?? 'Unknown track'}
-                          </Text>
-                        </View>
-                      );
-                    })
-                )}
-              </Animated.View>
+                </View>
+              ) : (
+                queue.map((item, index) => {
+                  const track = libraryById.get(item.trackId);
+                  return (
+                    <View
+                      key={`${item.action}-${item.trackId}`}
+                      style={[
+                        styles.queueRow,
+                        index < queue.length - 1 && {
+                          borderBottomWidth: StyleSheet.hairlineWidth,
+                          borderBottomColor: colors.separator,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          typography.caption1,
+                          styles.queueAction,
+                          {
+                            color:
+                              item.action === 'add' ? colors.tint : colors.danger,
+                          },
+                        ]}
+                      >
+                        {item.action === 'add' ? 'ADD' : 'RM'}
+                      </Text>
+                      <Text
+                        style={[typography.body, { color: colors.label, flex: 1 }]}
+                        numberOfLines={1}
+                      >
+                        {track?.title ?? 'Unknown'}
+                      </Text>
+                    </View>
+                  );
+                })
+              )}
+            </GroupedSection>
 
-              {(syncProgress.active ||
-                syncProgress.currentLabel ||
-                syncProgress.error) && (
-                <View style={panelStyle}>
-                  <Text style={[styles.panelTitle, { color: colors.chalk }]}>Status</Text>
+            {(syncProgress.active ||
+              syncProgress.currentLabel ||
+              syncProgress.error) && (
+              <GroupedSection header="Status">
+                <View style={styles.block}>
                   {syncProgress.error ? (
-                    <Text style={[styles.error, { color: colors.danger }]}>
+                    <Text style={[typography.body, { color: colors.danger }]}>
                       {syncProgress.error}
                     </Text>
                   ) : (
                     <>
-                      <Text style={[styles.panelBody, { color: colors.mist }]}>
+                      <Text style={[typography.body, { color: colors.label }]}>
                         {syncProgress.currentLabel || 'Ready'}
                       </Text>
                       {syncProgress.total > 0 ? (
                         <View
-                          style={[styles.progressTrack, { backgroundColor: colors.line }]}
+                          style={[styles.progressTrack, { backgroundColor: colors.fill }]}
                         >
                           <View
                             style={[
                               styles.progressFill,
                               {
-                                backgroundColor: colors.accent,
+                                backgroundColor: colors.tint,
                                 width: `${Math.max(4, progressRatio * 100)}%`,
                               },
                             ]}
@@ -168,136 +166,89 @@ export function SyncScreen() {
                     </>
                   )}
                 </View>
-              )}
+              </GroupedSection>
+            )}
 
-              <PrimaryButton
-                label={syncProgress.active ? 'Syncing…' : 'Sync to player'}
-                onPress={() => void runSync()}
+            <View style={styles.cta}>
+              <IOSButton
+                label={syncProgress.active ? 'Syncing…' : 'Sync to Player'}
+                onPress={() => void onSync()}
                 loading={syncProgress.active}
                 disabled={!device.connected}
-                style={styles.cta}
               />
-
-              <Text style={[styles.footnote, { color: colors.mist }]}>
-                Hardware tip: cheap USB mass-storage players appear in the Files app
-                when connected with a USB-C adapter. PulseDock manages the sync set on
-                the phone; the demo player rehearses the same add/remove workflow.
-              </Text>
-            </>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </Atmosphere>
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 function Stat({
   label,
   value,
-  accent,
+  color,
 }: {
   label: string;
-  value: string;
-  accent: string;
+  value: number;
+  color: string;
 }) {
   const { colors } = useTheme();
   return (
-    <View
-      style={[
-        styles.stat,
-        {
-          borderColor: colors.line,
-          backgroundColor: colors.inkSoft,
-        },
-      ]}
-    >
-      <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.mist }]}>{label}</Text>
+    <View style={styles.stat}>
+      <Text style={[typography.title1, { color }]}>{value}</Text>
+      <Text style={[typography.caption1, { color: colors.secondaryLabel }]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  root: { flex: 1 },
   pad: {
-    paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 140,
-    gap: 14,
+    paddingBottom: 48,
   },
-  panel: {
-    borderWidth: 1,
-    borderRadius: 18,
+  block: {
     padding: 16,
     gap: 12,
   },
-  panelTitle: {
-    fontFamily: 'Syne_700Bold',
-    fontSize: 18,
-  },
-  panelBody: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  statRow: {
+  stats: {
     flexDirection: 'row',
-    gap: 10,
+    paddingVertical: 16,
   },
   stat: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
     alignItems: 'center',
+    gap: 2,
   },
-  statValue: {
-    fontFamily: 'Syne_700Bold',
-    fontSize: 24,
+  statSep: {
+    width: StyleSheet.hairlineWidth,
   },
-  statLabel: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 11,
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+  meterWrap: {
+    padding: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   queueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   queueAction: {
-    fontFamily: 'IBMPlexSans_700Bold',
-    fontSize: 11,
-    width: 34,
-  },
-  queueTitle: {
-    flex: 1,
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 14,
+    width: 36,
+    fontWeight: '700',
   },
   progressTrack: {
-    height: 8,
-    borderRadius: 999,
+    height: 4,
+    borderRadius: 2,
     overflow: 'hidden',
+    marginTop: 10,
   },
   progressFill: {
     height: '100%',
   },
-  error: {
-    fontFamily: 'IBMPlexSans_500Medium',
-    fontSize: 13,
-  },
   cta: {
-    marginTop: 4,
+    paddingHorizontal: 16,
   },
-  footnote: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  mt: { marginTop: 4 },
 });

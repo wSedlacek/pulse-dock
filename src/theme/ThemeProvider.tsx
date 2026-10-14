@@ -24,8 +24,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const isDark = scheme === 'dark';
 
   useEffect(() => {
-    void SystemUI.setBackgroundColorAsync(colors.ink);
-  }, [colors.ink]);
+    void SystemUI.setBackgroundColorAsync(colors.groupedBackground);
+  }, [colors.groupedBackground]);
 
   const value = useMemo(
     () => ({ scheme, colors, isDark }),

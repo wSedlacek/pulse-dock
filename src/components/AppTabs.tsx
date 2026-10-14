@@ -9,34 +9,39 @@ export default function AppTabs() {
 
   const tint =
     Platform.OS === 'ios'
-      ? DynamicColorIOS({ light: '#2563EB', dark: '#4B8CFF' })
-      : colors.accent;
+      ? DynamicColorIOS({ light: '#007AFF', dark: '#0A84FF' })
+      : colors.tint;
 
   const labelColor =
     Platform.OS === 'ios'
       ? DynamicColorIOS({
-          light: '#5B6F8C',
-          dark: '#8FA4C2',
+          light: 'rgba(60, 60, 67, 0.60)',
+          dark: 'rgba(235, 235, 245, 0.60)',
         })
-      : colors.mist;
+      : colors.secondaryLabel;
 
   return (
     <NativeTabs
       tintColor={tint}
-      labelStyle={{ color: labelColor }}
+      labelStyle={{
+        fontSize: 10,
+        fontWeight: '500',
+        color: labelColor,
+      }}
+      blurEffect="systemDefault"
       backgroundColor={
         Platform.OS === 'ios'
-          ? DynamicColorIOS({ light: '#FFFFFF', dark: '#0A1528' })
-          : colors.tabBar
+          ? DynamicColorIOS({
+              light: 'rgba(255,255,255,0.0)',
+              dark: 'rgba(0,0,0,0.0)',
+            })
+          : colors.bar
       }
-      badgeBackgroundColor={
-        Platform.OS === 'ios'
-          ? DynamicColorIOS({ light: '#2563EB', dark: '#4B8CFF' })
-          : colors.accent
-      }
-      disableTransparentOnScrollEdge
+      badgeBackgroundColor={tint}
+      minimizeBehavior="automatic"
+      disableTransparentOnScrollEdge={false}
     >
-      <NativeTabs.Trigger name="index">
+      <NativeTabs.Trigger name="index" disableTransparentOnScrollEdge>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'music.note.list', selected: 'music.note.list' }}
           md="library_music"
@@ -49,18 +54,15 @@ export default function AppTabs() {
         ) : null}
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="player">
+      <NativeTabs.Trigger name="player" disableTransparentOnScrollEdge>
         <NativeTabs.Trigger.Icon
-          sf={{
-            default: 'ipod',
-            selected: 'ipod',
-          }}
+          sf={{ default: 'ipod', selected: 'ipod' }}
           md="devices"
         />
         <NativeTabs.Trigger.Label>Player</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="sync">
+      <NativeTabs.Trigger name="sync" disableTransparentOnScrollEdge>
         <NativeTabs.Trigger.Icon
           sf={{
             default: 'arrow.triangle.2.circlepath',

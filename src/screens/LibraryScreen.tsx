@@ -1,22 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useNavigation } from 'expo-router';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Atmosphere } from '../components/Atmosphere';
-import { BrandHeader } from '../components/BrandHeader';
-import { EmptyState } from '../components/EmptyState';
-import { PrimaryButton } from '../components/PrimaryButton';
+import * as Haptics from 'expo-haptics';
+import { GroupedSection } from '../components/GroupedSection';
+import { IOSButton } from '../components/IOSButton';
 import { TrackRow } from '../components/TrackRow';
 import { importHint } from '../services/importTracks';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
+import { typography } from '../theme/typography';
 
 export function LibraryScreen() {
+  const navigation = useNavigation();
   const {
     tracks,
     selectedIds,
@@ -30,6 +32,30 @@ export function LibraryScreen() {
   const [query, setQuery] = useState('');
   const [importing, setImporting] = useState(false);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: 'Library',
+      headerRight: () => (
+        <Text
+          onPress={() => {
+            if (Platform.OS === 'ios') void Haptics.selectionAsync();
+            void (async () => {
+              setImporting(true);
+              try {
+                await importTracks();
+              } finally {
+                setImporting(false);
+              }
+            })();
+          }}
+          style={[typography.body, { color: colors.tint, paddingHorizontal: 4 }]}
+        >
+          {importing ? '…' : 'Import'}
+        </Text>
+      ),
+    });
+  }, [navigation, colors.tint, importTracks, importing]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return tracks;
@@ -41,116 +67,135 @@ export function LibraryScreen() {
     );
   }, [tracks, query]);
 
-  const onImport = async () => {
-    setImporting(true);
-    try {
-      await importTracks();
-    } finally {
-      setImporting(false);
-    }
-  };
-
   return (
-    <Atmosphere>
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.pad}>
-          <BrandHeader title="Your host library" subtitle={importHint()} />
+    <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View style={styles.headerBlock}>
+            <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
+              {importHint()}
+            </Text>
 
-          <View style={styles.actions}>
-            <PrimaryButton
-              label="Import MP3s"
-              onPress={() => void onImport()}
-              loading={importing}
-              style={styles.flex}
-            />
-            <PrimaryButton
-              label="Select all"
-              variant="ghost"
-              onPress={selectAll}
-              style={styles.flex}
-            />
-            <PrimaryButton
-              label="Clear"
-              variant="ghost"
-              onPress={clearSelection}
-              style={styles.flex}
-            />
+            <View
+              style={[
+                styles.search,
+                { backgroundColor: colors.fill },
+              ]}
+            >
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search"
+                placeholderTextColor={colors.tertiaryLabel}
+                clearButtonMode="while-editing"
+                style={[typography.body, styles.searchInput, { color: colors.label }]}
+              />
+            </View>
+
+            <View style={styles.toolbar}>
+              <IOSButton
+                label="Select All"
+                variant="tinted"
+                onPress={selectAll}
+                style={styles.toolBtn}
+              />
+              <IOSButton
+                label="Clear"
+                variant="gray"
+                onPress={clearSelection}
+                style={styles.toolBtn}
+              />
+            </View>
+
+            <Text style={[typography.footnote, styles.count, { color: colors.secondaryLabel }]}>
+              {selectedIds.length} selected · {tracks.length} in library
+            </Text>
           </View>
-
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search title or artist"
-            placeholderTextColor={colors.mist}
+        }
+        ListEmptyComponent={
+          <GroupedSection footer="Import MP3s from Files or iCloud to build your host library.">
+            <View style={styles.empty}>
+              <Text style={[typography.headline, { color: colors.label }]}>No Songs</Text>
+              <Text style={[typography.subhead, { color: colors.secondaryLabel, marginTop: 4 }]}>
+                Tap Import in the top-right to add MP3s.
+              </Text>
+            </View>
+          </GroupedSection>
+        }
+        renderItem={({ item, index }) => (
+          <View
             style={[
-              styles.search,
+              index === 0 && styles.firstRow,
+              index === filtered.length - 1 && styles.lastRow,
               {
-                borderColor: colors.line,
-                backgroundColor: colors.inkElevated,
-                color: colors.chalk,
+                backgroundColor: colors.secondaryGrouped,
+                marginHorizontal: 16,
               },
             ]}
-          />
-
-          <Text style={[styles.count, { color: colors.mist }]}>
-            {selectedIds.length} selected for sync · {tracks.length} in library
-          </Text>
-        </View>
-
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <EmptyState
-              title="No tracks yet"
-              body="Import MP3s to build the host library you will push to your player."
-              actionLabel="Import MP3s"
-              onAction={() => void onImport()}
-            />
-          }
-          renderItem={({ item }) => (
+          >
             <TrackRow
               track={item}
               selected={selectedIds.includes(item.id)}
               onToggle={() => toggleSelected(item.id)}
               onRemove={item.isDemo ? undefined : () => removeTrack(item.id)}
               trailingLabel={item.isDemo ? 'Sample' : undefined}
+              showSeparator={index < filtered.length - 1}
             />
-          )}
-        />
-      </SafeAreaView>
-    </Atmosphere>
+          </View>
+        )}
+        ListFooterComponent={<View style={{ height: 40 }} />}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  pad: {
-    paddingHorizontal: 20,
+  root: { flex: 1 },
+  list: {
+    paddingBottom: 32,
+  },
+  headerBlock: {
+    paddingHorizontal: 16,
     paddingTop: 8,
+    paddingBottom: 12,
+    gap: 12,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
-  },
-  flex: { flex: 1 },
   search: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 14,
-    marginBottom: 10,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  searchInput: {
+    paddingVertical: 8,
+  },
+  toolbar: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  toolBtn: {
+    flex: 1,
+    minHeight: 44,
   },
   count: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 12,
-    marginBottom: 6,
+    marginLeft: 4,
   },
-  list: {
-    paddingBottom: 120,
+  firstRow: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
+  },
+  lastRow: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  empty: {
+    padding: 20,
   },
 });

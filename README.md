@@ -38,10 +38,16 @@ Many budget MP3 players mount as USB mass storage when connected with a USB-C ad
 
 The demo player simulates the same add/remove transfer so you can validate the UX immediately. Direct write access to arbitrary USB volumes still depends on iOS Files / security-scoped folder APIs in a development build.
 
-## Theme
+## Theme & native feel
 
-Blue accent palette that follows the OS appearance (`userInterfaceStyle: automatic`) via `useColorScheme`, with matching light and dark surfaces. Native iOS/Android use Expo Router **Native Tabs** (`expo-router/unstable-native-tabs`) with SF Symbols / Material icons; web uses headless tabs inside a centered iPhone shell for demos.
+Follows iOS Human Interface patterns:
+
+- System-like light/dark grouped backgrounds and **systemBlue** accents (`userInterfaceStyle: automatic`)
+- Large-title native stacks with blur headers
+- Expo Router **Native Tabs** (`expo-router/unstable-native-tabs`) with SF Symbols / Material icons
+- Inset-grouped lists, SF Symbols via `expo-symbols`, haptics via `expo-haptics`
+- Web preview uses a centered iPhone shell with status bar + home indicator for demos
 
 ## Stack
 
-Expo (SDK 57) · React Native · Expo Router · TypeScript · expo-system-ui · expo-document-picker
+Expo (SDK 57) · React Native · Expo Router · TypeScript · expo-system-ui · expo-document-picker · expo-symbols · expo-haptics · expo-blur

@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../theme/ThemeProvider';
+import { typography } from '../theme/typography';
 import { formatBytes } from '../utils/format';
 
 type Props = {
@@ -20,7 +21,7 @@ export function StorageMeter({ usedBytes, capacityBytes, label }: Props) {
   const width = useSharedValue(0);
 
   useEffect(() => {
-    width.value = withTiming(ratio, { duration: 700 });
+    width.value = withTiming(ratio, { duration: 500 });
   }, [ratio, width]);
 
   const fillStyle = useAnimatedStyle(() => ({
@@ -30,16 +31,16 @@ export function StorageMeter({ usedBytes, capacityBytes, label }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <Text style={[styles.label, { color: colors.mist }]}>
-          {label ?? 'Player storage'}
+        <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
+          {label ?? 'Storage'}
         </Text>
-        <Text style={[styles.value, { color: colors.chalkDim }]}>
-          {formatBytes(usedBytes)} / {formatBytes(capacityBytes)}
+        <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
+          {formatBytes(usedBytes)} of {formatBytes(capacityBytes)}
         </Text>
       </View>
-      <View style={[styles.track, { backgroundColor: colors.line }]}>
+      <View style={[styles.track, { backgroundColor: colors.fill }]}>
         <Animated.View
-          style={[styles.fill, { backgroundColor: colors.accent }, fillStyle]}
+          style={[styles.fill, { backgroundColor: colors.tint }, fillStyle]}
         />
       </View>
     </View>
@@ -47,29 +48,19 @@ export function StorageMeter({ usedBytes, capacityBytes, label }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: 8,
-  },
+  wrap: { gap: 8 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  label: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 12,
-  },
-  value: {
-    fontFamily: 'IBMPlexSans_500Medium',
-    fontSize: 12,
-  },
   track: {
-    height: 8,
-    borderRadius: 999,
+    height: 4,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    borderRadius: 999,
+    borderRadius: 2,
   },
 });

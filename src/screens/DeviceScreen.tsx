@@ -1,162 +1,176 @@
+import { useNavigation } from 'expo-router';
+import { useLayoutEffect } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Atmosphere } from '../components/Atmosphere';
-import { BrandHeader } from '../components/BrandHeader';
-import { EmptyState } from '../components/EmptyState';
-import { PrimaryButton } from '../components/PrimaryButton';
+import { GroupedSection } from '../components/GroupedSection';
+import { IOSButton } from '../components/IOSButton';
 import { StorageMeter } from '../components/StorageMeter';
 import { TrackRow } from '../components/TrackRow';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
+import { typography } from '../theme/typography';
 
 export function DeviceScreen() {
+  const navigation = useNavigation();
   const { device, libraryById, connectDemoPlayer, disconnectPlayer, resetDemoData } =
     useMusicStore();
   const { colors } = useTheme();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: 'Player' });
+  }, [navigation]);
 
   const onDeviceTracks = (device?.trackIds ?? [])
     .map((id) => libraryById.get(id))
     .filter(Boolean);
 
   return (
-    <Atmosphere>
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.pad}>
-          <BrandHeader
-            title="Connected player"
-            subtitle="Use the iPhone as the host. Plug a USB-C MP3 player in with an adapter, or practice with the demo Nomad Clip."
-          />
+    <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
+      <FlatList
+        data={onDeviceTracks}
+        keyExtractor={(item) => item!.id}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View>
+            {device?.connected ? (
+              <>
+                <GroupedSection
+                  header="Connected Device"
+                  footer="Plug a USB-C MP3 player into your iPhone with an adapter, or use the demo Nomad Clip to practice sync sets."
+                >
+                  <View style={styles.deviceBlock}>
+                    <View style={styles.deviceTop}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.headline, { color: colors.label }]}>
+                          {device.name}
+                        </Text>
+                        <Text
+                          style={[typography.subhead, { color: colors.secondaryLabel }]}
+                        >
+                          {device.model}
+                        </Text>
+                      </View>
+                      <View style={[styles.pill, { backgroundColor: colors.secondaryFill }]}>
+                        <View style={[styles.dot, { backgroundColor: colors.green }]} />
+                        <Text style={[typography.caption1, { color: colors.tint }]}>
+                          {device.isDemo ? 'Demo' : 'Linked'}
+                        </Text>
+                      </View>
+                    </View>
 
-          {device?.connected ? (
-            <View
-              style={[
-                styles.panel,
-                {
-                  borderColor: colors.line,
-                  backgroundColor: colors.inkElevated,
-                },
-              ]}
-            >
-              <View style={styles.panelTop}>
-                <View>
-                  <Text style={[styles.deviceName, { color: colors.chalk }]}>
-                    {device.name}
-                  </Text>
-                  <Text style={[styles.deviceModel, { color: colors.mist }]}>
-                    {device.model}
-                  </Text>
-                </View>
-                <View
+                    <StorageMeter
+                      usedBytes={device.usedBytes}
+                      capacityBytes={device.capacityBytes}
+                    />
+
+                    <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
+                      {device.trackIds.length} songs
+                      {device.lastSyncedAt
+                        ? ` · Synced ${new Date(device.lastSyncedAt).toLocaleString()}`
+                        : ' · Not synced yet'}
+                    </Text>
+                  </View>
+
+                  <View style={[styles.rowActions, { borderTopColor: colors.separator }]}>
+                    <IOSButton
+                      label="Disconnect"
+                      variant="plain"
+                      onPress={disconnectPlayer}
+                      style={styles.half}
+                    />
+                    <View style={[styles.vSep, { backgroundColor: colors.separator }]} />
+                    <IOSButton
+                      label="Reset Demo"
+                      variant="plain"
+                      onPress={() => void resetDemoData()}
+                      style={styles.half}
+                    />
+                  </View>
+                </GroupedSection>
+
+                <Text
                   style={[
-                    styles.livePill,
-                    { backgroundColor: colors.glow },
+                    typography.footnote,
+                    styles.sectionLabel,
+                    { color: colors.secondaryLabel },
                   ]}
                 >
-                  <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
-                  <Text style={[styles.liveText, { color: colors.accent }]}>
-                    {device.isDemo ? 'Demo link' : 'Linked'}
+                  ON THIS PLAYER
+                </Text>
+              </>
+            ) : (
+              <GroupedSection
+                header="No Player"
+                footer="Connect a mass-storage MP3 player over USB-C, then manage its music from this host."
+              >
+                <View style={styles.deviceBlock}>
+                  <Text style={[typography.headline, { color: colors.label }]}>
+                    Nothing Connected
                   </Text>
+                  <Text
+                    style={[
+                      typography.subhead,
+                      { color: colors.secondaryLabel, marginTop: 6, marginBottom: 14 },
+                    ]}
+                  >
+                    Use the demo player to rehearse syncing before you plug in hardware.
+                  </Text>
+                  <IOSButton label="Connect Demo Player" onPress={connectDemoPlayer} />
                 </View>
-              </View>
-
-              <StorageMeter
-                usedBytes={device.usedBytes}
-                capacityBytes={device.capacityBytes}
-              />
-
-              <Text style={[styles.meta, { color: colors.chalkDim }]}>
-                {device.trackIds.length} songs on player
-                {device.lastSyncedAt
-                  ? ` · last sync ${new Date(device.lastSyncedAt).toLocaleString()}`
-                  : ' · not synced yet'}
-              </Text>
-
-              <View style={styles.actions}>
-                <PrimaryButton
-                  label="Disconnect"
-                  variant="ghost"
-                  onPress={disconnectPlayer}
-                  style={styles.flex}
-                />
-                <PrimaryButton
-                  label="Reset demo"
-                  variant="ghost"
-                  onPress={() => void resetDemoData()}
-                  style={styles.flex}
-                />
-              </View>
-            </View>
-          ) : (
-            <View
+              </GroupedSection>
+            )}
+          </View>
+        }
+        ListEmptyComponent={
+          device?.connected ? (
+            <Text
               style={[
-                styles.panel,
-                {
-                  borderColor: colors.line,
-                  backgroundColor: colors.inkElevated,
-                },
+                typography.subhead,
+                { color: colors.secondaryLabel, paddingHorizontal: 32, paddingTop: 8 },
               ]}
             >
-              <EmptyState
-                title="No player connected"
-                body="Connect a mass-storage MP3 player over USB-C, then manage its music from this host. Until hardware is plugged in, use the demo player to rehearse sync sets."
-                actionLabel="Connect demo player"
-                onAction={connectDemoPlayer}
-              />
-            </View>
-          )}
-
-          <Text style={[styles.section, { color: colors.chalk }]}>On this player</Text>
-        </View>
-
-        <FlatList
-          data={onDeviceTracks}
-          keyExtractor={(item) => item!.id}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <View style={styles.pad}>
-              <Text style={[styles.emptyCopy, { color: colors.mist }]}>
-                Nothing on the player yet. Pick songs in Library, then run Sync.
-              </Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <TrackRow track={item!} mode="plain" trailingLabel="On player" />
-          )}
-        />
-      </SafeAreaView>
-    </Atmosphere>
+              Nothing on the player yet. Choose songs in Library, then run Sync.
+            </Text>
+          ) : null
+        }
+        renderItem={({ item, index }) => (
+          <View
+            style={[
+              index === 0 && styles.firstRow,
+              index === onDeviceTracks.length - 1 && styles.lastRow,
+              {
+                backgroundColor: colors.secondaryGrouped,
+                marginHorizontal: 16,
+              },
+            ]}
+          >
+            <TrackRow
+              track={item!}
+              mode="plain"
+              trailingLabel="On Player"
+              showSeparator={index < onDeviceTracks.length - 1}
+            />
+          </View>
+        )}
+        ListFooterComponent={<View style={{ height: 48 }} />}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  pad: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  panel: {
-    borderWidth: 1,
-    borderRadius: 18,
+  root: { flex: 1 },
+  list: { paddingTop: 8, paddingBottom: 32 },
+  deviceBlock: {
     padding: 16,
-    marginBottom: 22,
     gap: 14,
   },
-  panelTop: {
+  deviceTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 12,
   },
-  deviceName: {
-    fontFamily: 'Syne_700Bold',
-    fontSize: 22,
-  },
-  deviceModel: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  livePill: {
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -164,39 +178,29 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  liveDot: {
+  dot: {
     width: 7,
     height: 7,
     borderRadius: 4,
   },
-  liveText: {
-    fontFamily: 'IBMPlexSans_500Medium',
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  meta: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 12,
-  },
-  actions: {
+  rowActions: {
     flexDirection: 'row',
-    gap: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  flex: { flex: 1 },
-  section: {
-    fontFamily: 'IBMPlexSans_600SemiBold',
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 4,
+  half: { flex: 1 },
+  vSep: { width: StyleSheet.hairlineWidth },
+  sectionLabel: {
+    marginLeft: 32,
+    marginBottom: 8,
   },
-  list: {
-    paddingBottom: 120,
+  firstRow: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
   },
-  emptyCopy: {
-    fontFamily: 'IBMPlexSans_400Regular',
-    fontSize: 14,
-    lineHeight: 20,
+  lastRow: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    overflow: 'hidden',
   },
 });
