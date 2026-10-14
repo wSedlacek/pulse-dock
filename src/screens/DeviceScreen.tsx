@@ -1,4 +1,4 @@
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
 import { LargeTitle } from '../components/LargeTitle';
@@ -10,14 +10,26 @@ import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
 
 export function DeviceScreen() {
-  const { device, libraryById, connectDemoPlayer, disconnectPlayer, resetDemoData } =
-    useMusicStore();
+  const {
+    device,
+    libraryById,
+    usbSupported,
+    connectDemoPlayer,
+    linkUsbPlayer,
+    disconnectPlayer,
+    resetDemoData,
+    syncProgress,
+  } = useMusicStore();
   const { colors } = useTheme();
   const safePad = usePhoneSafePadding();
 
   const onDeviceTracks = (device?.trackIds ?? [])
     .map((id) => libraryById.get(id))
     .filter(Boolean);
+
+  const linkFooter = usbSupported
+    ? 'Plug the MP3 player into your phone (USB-C / Lightning adapter), open Files → Locations, then choose the player’s Music folder so PulseDock can copy MP3s onto it.'
+    : 'USB file copy runs in the iOS/Android app. This web preview uses the demo player only.';
 
   return (
     <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
@@ -32,11 +44,41 @@ export function DeviceScreen() {
             <View style={styles.titlePad}>
               <LargeTitle>Player</LargeTitle>
             </View>
+
+            {device?.needsRelink ? (
+              <GroupedSection
+                header="Re-link Required"
+                footer="iOS grants folder access per session. Link the USB Music folder again to continue copying files."
+              >
+                <View style={styles.deviceBlock}>
+                  <Text style={[typography.headline, { color: colors.label }]}>
+                    {device.name}
+                  </Text>
+                  <Text
+                    style={[
+                      typography.subhead,
+                      { color: colors.secondaryLabel, marginTop: 6, marginBottom: 14 },
+                    ]}
+                  >
+                    Access to the player folder expired.
+                  </Text>
+                  <IOSButton
+                    label="Link USB Music Folder"
+                    onPress={() => void linkUsbPlayer()}
+                  />
+                </View>
+              </GroupedSection>
+            ) : null}
+
             {device?.connected ? (
               <>
                 <GroupedSection
                   header="Connected Device"
-                  footer="Plug a USB-C MP3 player into your iPhone with an adapter, or use the demo Nomad Clip to practice sync sets."
+                  footer={
+                    device.isDemo
+                      ? 'Demo mode simulates adds/removes. Link a real USB Music folder to copy files onto hardware.'
+                      : 'PulseDock copies and deletes MP3s in this folder when you run Sync.'
+                  }
                 >
                   <View style={styles.deviceBlock}>
                     <View style={styles.deviceTop}>
@@ -51,9 +93,14 @@ export function DeviceScreen() {
                         </Text>
                       </View>
                       <View style={[styles.pill, { backgroundColor: colors.secondaryFill }]}>
-                        <View style={[styles.dot, { backgroundColor: colors.green }]} />
+                        <View
+                          style={[
+                            styles.dot,
+                            { backgroundColor: device.isDemo ? colors.orange : colors.green },
+                          ]}
+                        />
                         <Text style={[typography.caption1, { color: colors.tint }]}>
-                          {device.isDemo ? 'Demo' : 'Linked'}
+                          {device.isDemo ? 'Demo' : 'USB'}
                         </Text>
                       </View>
                     </View>
@@ -69,6 +116,14 @@ export function DeviceScreen() {
                         ? ` · Synced ${new Date(device.lastSyncedAt).toLocaleString()}`
                         : ' · Not synced yet'}
                     </Text>
+                    {!device.isDemo && device.rootUri ? (
+                      <Text
+                        style={[typography.caption2, { color: colors.tertiaryLabel }]}
+                        numberOfLines={2}
+                      >
+                        {device.rootUri}
+                      </Text>
+                    ) : null}
                   </View>
 
                   <View style={[styles.rowActions, { borderTopColor: colors.separator }]}>
@@ -79,14 +134,32 @@ export function DeviceScreen() {
                       style={styles.half}
                     />
                     <View style={[styles.vSep, { backgroundColor: colors.separator }]} />
-                    <IOSButton
-                      label="Reset Demo"
-                      variant="plain"
-                      onPress={() => void resetDemoData()}
-                      style={styles.half}
-                    />
+                    {device.isDemo ? (
+                      <IOSButton
+                        label="Reset Demo"
+                        variant="plain"
+                        onPress={() => void resetDemoData()}
+                        style={styles.half}
+                      />
+                    ) : (
+                      <IOSButton
+                        label="Re-link"
+                        variant="plain"
+                        onPress={() => void linkUsbPlayer()}
+                        style={styles.half}
+                      />
+                    )}
                   </View>
                 </GroupedSection>
+
+                {usbSupported && device.isDemo ? (
+                  <View style={styles.ctaPad}>
+                    <IOSButton
+                      label="Link USB Music Folder"
+                      onPress={() => void linkUsbPlayer()}
+                    />
+                  </View>
+                ) : null}
 
                 <Text
                   style={[
@@ -98,11 +171,8 @@ export function DeviceScreen() {
                   ON THIS PLAYER
                 </Text>
               </>
-            ) : (
-              <GroupedSection
-                header="No Player"
-                footer="Connect a mass-storage MP3 player over USB-C, then manage its music from this host."
-              >
+            ) : !device?.needsRelink ? (
+              <GroupedSection header="No Player" footer={linkFooter}>
                 <View style={styles.deviceBlock}>
                   <Text style={[typography.headline, { color: colors.label }]}>
                     Nothing Connected
@@ -113,12 +183,36 @@ export function DeviceScreen() {
                       { color: colors.secondaryLabel, marginTop: 6, marginBottom: 14 },
                     ]}
                   >
-                    Use the demo player to rehearse syncing before you plug in hardware.
+                    {usbSupported
+                      ? 'Link the USB player’s Music folder to copy real MP3 files onto it.'
+                      : 'Use the demo player here, or open PulseDock on your phone to write to USB.'}
                   </Text>
-                  <IOSButton label="Connect Demo Player" onPress={connectDemoPlayer} />
+                  {usbSupported ? (
+                    <IOSButton
+                      label="Link USB Music Folder"
+                      onPress={() => void linkUsbPlayer()}
+                    />
+                  ) : null}
+                  <View style={{ height: usbSupported ? 10 : 0 }} />
+                  <IOSButton
+                    label="Connect Demo Player"
+                    variant={usbSupported ? 'gray' : 'filled'}
+                    onPress={connectDemoPlayer}
+                  />
                 </View>
               </GroupedSection>
-            )}
+            ) : null}
+
+            {syncProgress.error && Platform.OS !== 'web' ? (
+              <Text
+                style={[
+                  typography.footnote,
+                  { color: colors.danger, paddingHorizontal: 32, marginTop: 8 },
+                ]}
+              >
+                {syncProgress.error}
+              </Text>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -162,6 +256,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   list: { paddingTop: 8, paddingBottom: 32 },
   titlePad: { paddingHorizontal: 16, paddingTop: 4 },
+  ctaPad: { paddingHorizontal: 16, marginBottom: 16 },
   deviceBlock: {
     padding: 16,
     gap: 14,

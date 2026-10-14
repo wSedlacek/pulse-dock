@@ -48,19 +48,26 @@ export function estimatePlanBytes(
   return { addBytes, removeBytes, keepBytes };
 }
 
+/** Demo-only: update in-memory player state without touching disk. */
 export function applySyncPlan(
   device: PlayerDevice,
   plan: SyncPlanItem[],
   libraryById: Map<string, Track>,
 ): PlayerDevice {
   const nextIds = new Set(device.trackIds);
+  const fileNames = { ...device.fileNames };
 
   for (const item of plan) {
     if (item.action === 'add' || item.action === 'keep') {
       nextIds.add(item.trackId);
+      const track = libraryById.get(item.trackId);
+      if (track && !fileNames[item.trackId]) {
+        fileNames[item.trackId] = track.fileName;
+      }
     }
     if (item.action === 'remove') {
       nextIds.delete(item.trackId);
+      delete fileNames[item.trackId];
     }
   }
 
@@ -72,6 +79,7 @@ export function applySyncPlan(
   return {
     ...device,
     trackIds: [...nextIds],
+    fileNames,
     usedBytes,
     lastSyncedAt: new Date().toISOString(),
     connected: true,
@@ -85,7 +93,6 @@ export function wouldExceedCapacity(
 ): boolean {
   const { addBytes, removeBytes, keepBytes } = estimatePlanBytes(plan, libraryById);
   const projected = keepBytes + addBytes;
-  // removeBytes frees space but projected already excludes removals
   void removeBytes;
   return projected > device.capacityBytes;
 }

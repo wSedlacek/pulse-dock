@@ -12,8 +12,15 @@ import { typography } from '../theme/typography';
 import { formatBytes } from '../utils/format';
 
 export function SyncScreen() {
-  const { device, libraryById, syncProgress, runSync, connectDemoPlayer } =
-    useMusicStore();
+  const {
+    device,
+    libraryById,
+    syncProgress,
+    runSync,
+    connectDemoPlayer,
+    linkUsbPlayer,
+    usbSupported,
+  } = useMusicStore();
   const { plan, addBytes, removeBytes, keepBytes } = useSyncSummary();
   const { colors } = useTheme();
   const safePad = usePhoneSafePadding();
@@ -54,11 +61,26 @@ export function SyncScreen() {
         </View>
         {!device?.connected ? (
           <GroupedSection
-            header="Player Offline"
-            footer="Connect your USB MP3 player or use the demo Nomad Clip to preview a transfer."
+            header={device?.needsRelink ? 'Re-link Player' : 'Player Offline'}
+            footer={
+              usbSupported
+                ? 'Plug in the USB MP3 player, then link its Music folder so Sync can copy and delete real MP3 files.'
+                : 'USB copy needs the phone app. Use the demo player in this web preview.'
+            }
           >
             <View style={styles.block}>
-              <IOSButton label="Connect Demo Player" onPress={connectDemoPlayer} />
+              {usbSupported ? (
+                <IOSButton
+                  label="Link USB Music Folder"
+                  onPress={() => void linkUsbPlayer()}
+                />
+              ) : null}
+              <View style={{ height: usbSupported ? 10 : 0 }} />
+              <IOSButton
+                label="Connect Demo Player"
+                variant={usbSupported ? 'gray' : 'filled'}
+                onPress={connectDemoPlayer}
+              />
             </View>
           </GroupedSection>
         ) : (
@@ -88,7 +110,9 @@ export function SyncScreen() {
               footer={
                 queue.length === 0
                   ? 'Selection already matches the player.'
-                  : 'Songs marked Add are copied; Remove deletes them from the player.'
+                  : device.isDemo
+                    ? 'Demo mode updates the in-app player only — no USB writes.'
+                    : 'Add copies MP3 bytes onto the linked USB folder; Remove deletes those files from the player.'
               }
             >
               {queue.length === 0 ? (
@@ -172,7 +196,13 @@ export function SyncScreen() {
 
             <View style={styles.cta}>
               <IOSButton
-                label={syncProgress.active ? 'Syncing…' : 'Sync to Player'}
+                label={
+                  syncProgress.active
+                    ? 'Syncing…'
+                    : device.isDemo
+                      ? 'Run Demo Sync'
+                      : 'Copy Files to USB'
+                }
                 onPress={() => void onSync()}
                 loading={syncProgress.active}
                 disabled={!device.connected}

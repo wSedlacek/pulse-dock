@@ -37,7 +37,7 @@ export async function pickMp3Files(): Promise<Track[]> {
 
 export function importHint(): string {
   if (Platform.OS === 'web') {
-    return 'Import MP3s from this computer, then sync them to a demo player or export for your device.';
+    return 'Import MP3s here to rehearse the library. Real USB file copy runs in the iOS/Android app.';
   }
-  return 'Import MP3s from Files, Files apps, or cloud storage. Connect a USB MP3 player with a USB-C adapter to manage what lives on the player.';
+  return 'Import MP3s from Files or cloud storage. On Player, link your USB Music folder, then Sync copies those files onto the player.';
 }

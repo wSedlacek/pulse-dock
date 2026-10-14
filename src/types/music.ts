@@ -20,9 +20,18 @@ export type PlayerDevice = {
   usedBytes: number;
   connected: boolean;
   isDemo: boolean;
+  /**
+   * Absolute / content URI of the USB music folder granted via the system
+   * directory picker. Null for the in-app demo player.
+   */
+  rootUri: string | null;
+  /** Host track id → file name written on the player. */
+  fileNames: Record<string, string>;
   /** Tracks currently on the player, keyed by host track id when known. */
   trackIds: string[];
   lastSyncedAt: string | null;
+  /** iOS security-scoped access expired — user must link the folder again. */
+  needsRelink?: boolean;
 };
 
 export type SyncPlanItem = {

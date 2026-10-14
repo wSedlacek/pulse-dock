@@ -1,26 +1,31 @@
 # PulseDock
 
-iPhone-hosted MP3 manager for syncing songs to a USB MP3 player.
+iPhone-hosted MP3 manager that **copies real MP3 files** onto a USB mass-storage MP3 player.
 
-PulseDock keeps your library on the phone, lets you build a sync set, then pushes adds/removes to a connected player. A demo **Nomad Clip** player is included so you can rehearse the full workflow without hardware.
+## How USB sync works
 
-## Features
+1. **Import** MP3s into the host library (Files / cloud / document picker). Files are copied into the app cache so Sync can read them.
+2. **Player → Link USB Music Folder** opens the system directory picker. Choose the player under Files → Locations (iOS) or via Storage Access Framework (Android). Prefer the player’s `Music` / `MUSIC` folder.
+3. **Library** — select the sync set.
+4. **Sync → Copy Files to USB** — PulseDock:
+   - **Add:** `File.copy()` each selected MP3 onto the linked folder
+   - **Remove:** delete those files from the player
+   - Writes a `.pulsedock-library.json` manifest so the next sync knows which host tracks map to which files
 
-- **Host library** — import MP3s from Files / cloud storage (or the browser on web)
-- **Player view** — see capacity, songs on the device, connection state
-- **Sync planner** — add / remove / keep diff with projected storage
-- **Demo player** — practice transfers with sample tracks before plugging in hardware
+iOS grants folder access for the current app session. After a force-quit, use **Re-link** on the Player tab.
+
+A **demo player** remains available for rehearsing the UI without hardware (no disk writes).
 
 ## Run locally
 
 ```bash
 npm install
-npm run web          # http://localhost:3847
-npm run ios          # Expo Go or simulator (macOS)
+npm run web          # http://localhost:3847 (demo player only)
+npm run ios          # development build / Expo Go on device
 npm run android
 ```
 
-For a native iOS build:
+USB folder picking and file copy need a **native** build (iOS or Android). Web is for library/sync UX rehearsal.
 
 ```bash
 npx expo prebuild
@@ -30,32 +35,10 @@ npx expo run:ios
 
 ## Hardware notes
 
-Many budget MP3 players mount as USB mass storage when connected with a USB-C adapter. PulseDock is designed around that host workflow:
+Most budget USB-C / MTP-as-mass-storage MP3 players appear under **Files → Locations** when plugged into the iPhone with an adapter. PulseDock does not talk proprietary protocols — it writes standard `.mp3` files into the folder you grant.
 
-1. Import and curate songs on the iPhone
-2. Select the sync set in **Library**
-3. Connect the player and run **Sync**
-
-The demo player simulates the same add/remove transfer so you can validate the UX immediately. Direct write access to arbitrary USB volumes still depends on iOS Files / security-scoped folder APIs in a development build.
-
-## Theme & native feel
-
-Follows iOS Human Interface patterns:
-
-- System-like light/dark grouped backgrounds and **systemBlue** accents (`userInterfaceStyle: automatic`)
-- Large-title native stacks with blur headers
-- Expo Router **Native Tabs** (`expo-router/unstable-native-tabs`) with SF Symbols / Material icons
-- Inset-grouped lists, SF Symbols via `expo-symbols`, haptics via `expo-haptics`
-- Web preview uses a centered iPhone shell with status bar + home indicator for demos
+Demo sample tracks are metadata-only; import real MP3s before syncing to USB.
 
 ## Stack
 
-Expo **SDK 58 beta** · React Native 0.88 RC · Expo Router (stable Native Tabs, Stack.Toolbar, async web routes, `activityEnabled`) · TypeScript · expo-system-ui · expo-document-picker · expo-symbols · expo-haptics · expo-blur · @expo/ui
-
-### SDK 58 router notes
-
-- Native tabs: `expo-router/native-tabs` (stable)
-- Web tabs: `expo-router/js-tabs` inside the iPhone shell
-- Header actions: `Stack.Toolbar` / `Stack.Toolbar.Button`
-- Inactive screens: `activityEnabled` on Stacks
-- Web route splitting: `asyncRoutes.web` enabled via the expo-router plugin
+Expo **SDK 58** · React Native · Expo Router (Native Tabs) · `expo-file-system` (`Directory.pickDirectoryAsync`, `File.copy` / `delete`) · `expo-document-picker` · TypeScript
