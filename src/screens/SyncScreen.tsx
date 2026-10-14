@@ -5,6 +5,7 @@ import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
 import { LargeTitle } from '../components/LargeTitle';
 import { StorageMeter } from '../components/StorageMeter';
+import { usePhoneSafePadding } from '../navigation/usePhoneSafePadding';
 import { useMusicStore, useSyncSummary } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
@@ -15,6 +16,7 @@ export function SyncScreen() {
     useMusicStore();
   const { plan, addBytes, removeBytes, keepBytes } = useSyncSummary();
   const { colors } = useTheme();
+  const safePad = usePhoneSafePadding();
 
   const counts = useMemo(
     () => ({
@@ -44,7 +46,7 @@ export function SyncScreen() {
     <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.pad}
+        contentContainerStyle={[styles.pad, safePad]}
       >
         <View style={styles.titlePad}>
           <LargeTitle>Sync</LargeTitle>

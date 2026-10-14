@@ -13,6 +13,7 @@ import { GroupedSection } from '../components/GroupedSection';
 import { IOSButton } from '../components/IOSButton';
 import { LargeTitle } from '../components/LargeTitle';
 import { TrackRow } from '../components/TrackRow';
+import { usePhoneSafePadding } from '../navigation/usePhoneSafePadding';
 import { importHint } from '../services/importTracks';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -29,6 +30,7 @@ export function LibraryScreen() {
     clearSelection,
   } = useMusicStore();
   const { colors } = useTheme();
+  const safePad = usePhoneSafePadding();
   const [query, setQuery] = useState('');
   const [importing, setImporting] = useState(false);
 
@@ -55,23 +57,24 @@ export function LibraryScreen() {
 
   return (
     <>
-      {/* SDK 58 stable Stack.Toolbar — native header button */}
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button
-          accessibilityLabel="Import MP3s"
-          disabled={importing}
-          onPress={() => void onImport()}
-        >
-          {importing ? '…' : 'Import'}
-        </Stack.Toolbar.Button>
-      </Stack.Toolbar>
+      {Platform.OS === 'ios' ? (
+        <Stack.Toolbar placement="right">
+          <Stack.Toolbar.Button
+            accessibilityLabel="Import MP3s"
+            disabled={importing}
+            onPress={() => void onImport()}
+          >
+            {importing ? '…' : 'Import'}
+          </Stack.Toolbar.Button>
+        </Stack.Toolbar>
+      ) : null}
 
       <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
           contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, safePad]}
           ListHeaderComponent={
             <View style={styles.headerBlock}>
               <LargeTitle>Library</LargeTitle>

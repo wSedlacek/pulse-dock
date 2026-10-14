@@ -4,23 +4,23 @@ import type { ThemeColors } from '../theme/colors';
 /**
  * Native-feeling stack chrome.
  *
- * - iOS: transparent + system material so content blends under the status bar
- *   (no hard white slab).
- * - Web (phone shell): opaque header painted with the same grouped background
- *   as the scene, so status chrome → title → content read as one surface.
+ * On iOS: transparent large-title header + system material so content blends
+ * under the status bar (no hard white slab).
+ *
+ * On web: hide the stack header entirely. The phone-shell SafeAreaProvider
+ * supplies insets and screens render a LargeTitle in content — otherwise
+ * react-navigation paints an opaque white header band under our status chrome.
  */
 export function iosStackOptions(colors: ThemeColors) {
   const isIOS = Platform.OS === 'ios';
 
   return {
-    // Large titles are a native UIKit feature; on web we render them in-screen.
+    headerShown: isIOS,
     headerLargeTitle: isIOS,
     headerTransparent: isIOS,
     headerBlurEffect: isIOS ? ('systemChromeMaterial' as const) : undefined,
     headerShadowVisible: false,
     headerTintColor: colors.tint,
-    // Hide the compact title on web — screens show a large title themselves.
-    headerTitle: isIOS ? undefined : '',
     headerLargeTitleStyle: {
       color: colors.label,
     },

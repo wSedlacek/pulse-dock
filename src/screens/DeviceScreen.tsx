@@ -4,6 +4,7 @@ import { IOSButton } from '../components/IOSButton';
 import { LargeTitle } from '../components/LargeTitle';
 import { StorageMeter } from '../components/StorageMeter';
 import { TrackRow } from '../components/TrackRow';
+import { usePhoneSafePadding } from '../navigation/usePhoneSafePadding';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
@@ -12,6 +13,7 @@ export function DeviceScreen() {
   const { device, libraryById, connectDemoPlayer, disconnectPlayer, resetDemoData } =
     useMusicStore();
   const { colors } = useTheme();
+  const safePad = usePhoneSafePadding();
 
   const onDeviceTracks = (device?.trackIds ?? [])
     .map((id) => libraryById.get(id))
@@ -23,7 +25,7 @@ export function DeviceScreen() {
         data={onDeviceTracks}
         keyExtractor={(item) => item!.id}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, safePad]}
         ListHeaderComponent={
           <View>
             <View style={styles.titlePad}>
