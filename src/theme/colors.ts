@@ -1,0 +1,17 @@
+export const colors = {
+  ink: '#071018',
+  inkElevated: '#0E1A26',
+  inkSoft: '#152536',
+  mist: '#8FA3B8',
+  chalk: '#E8F1F7',
+  chalkDim: '#B7C7D6',
+  led: '#3DFFC8',
+  ledDim: '#1FA87F',
+  amber: '#FFB347',
+  danger: '#FF6B6B',
+  line: 'rgba(232, 241, 247, 0.08)',
+  glow: 'rgba(61, 255, 200, 0.16)',
+  washTop: '#10263A',
+  washMid: '#0A1824',
+  washBottom: '#050B12',
+} as const;
