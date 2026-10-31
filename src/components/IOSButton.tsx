@@ -1,7 +1,5 @@
-import * as Haptics from 'expo-haptics';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -16,15 +14,7 @@ type Props = {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  /**
-   * Visual weight — mirrors UIKit button configurations.
-   * Prefer one `filled` primary per screen.
-   */
   variant?: 'filled' | 'tinted' | 'gray' | 'plain' | 'destructive';
-  /**
-   * Control size — mirrors `.controlSize`:
-   * large ≈ 50pt (full-width CTA), medium ≈ 44pt, small ≈ 34pt.
-   */
   size?: 'large' | 'medium' | 'small';
   style?: ViewStyle;
 };
@@ -43,7 +33,7 @@ const SIZE = {
     label: typography.body as TextStyle,
   },
   small: {
-    minHeight: 34,
+    minHeight: 44,
     radius: 8,
     padH: 12,
     label: { ...typography.subhead, fontWeight: '600' } as TextStyle,
@@ -61,6 +51,8 @@ export function IOSButton({
 }: Props) {
   const { colors } = useTheme();
   const metrics = SIZE[size];
+  const busy = !!loading;
+  const inactive = !!disabled || busy;
 
   const bg =
     variant === 'filled'
@@ -83,13 +75,10 @@ export function IOSButton({
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={disabled || loading}
-      onPress={() => {
-        if (Platform.OS === 'ios') {
-          void Haptics.selectionAsync();
-        }
-        onPress();
-      }}
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: inactive, busy }}
+      disabled={inactive}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.base,
         {
@@ -97,13 +86,13 @@ export function IOSButton({
           minHeight: metrics.minHeight,
           borderRadius: metrics.radius,
           paddingHorizontal: metrics.padH,
-          opacity: pressed || disabled || loading ? 0.55 : 1,
+          opacity: inactive ? 0.4 : pressed ? 0.7 : 1,
         },
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={fg} />
+      {busy ? (
+        <ActivityIndicator color={fg as string} />
       ) : (
         <Text style={[metrics.label, { color: fg }]}>{label}</Text>
       )}

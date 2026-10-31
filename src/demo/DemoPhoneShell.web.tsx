@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  SafeAreaFrameContext,
+  SafeAreaInsetsContext,
+} from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
 import {
@@ -12,10 +15,26 @@ import {
   DEMO_STATUS_BAR_INSET,
 } from './phoneMetrics';
 
+const DEMO_INSETS = {
+  top: DEMO_STATUS_BAR_INSET,
+  right: 0,
+  bottom: DEMO_HOME_INDICATOR_INSET,
+  left: 0,
+};
+
+const DEMO_FRAME = {
+  x: 0,
+  y: 0,
+  width: DEMO_PHONE_INNER_WIDTH,
+  height: DEMO_PHONE_INNER_HEIGHT,
+};
+
 /**
  * Web-only injection: centered iPhone frame + fake status bar / home indicator.
- * Nested SafeAreaProvider publishes phone insets so the real app (tabs, screens)
- * can use useSafeAreaInsets() the same way it would on device.
+ *
+ * Publishes insets via SafeAreaInsetsContext / SafeAreaFrameContext directly
+ * so a nested SafeAreaProvider cannot overwrite them with browser (0,0,0,0)
+ * measurements after mount.
  */
 export function DemoPhoneShell({ children }: { children: ReactNode }) {
   const { colors, isDark } = useTheme();
@@ -41,24 +60,11 @@ export function DemoPhoneShell({ children }: { children: ReactNode }) {
           },
         ]}
       >
-        <SafeAreaProvider
-          initialMetrics={{
-            frame: {
-              x: 0,
-              y: 0,
-              width: DEMO_PHONE_INNER_WIDTH,
-              height: DEMO_PHONE_INNER_HEIGHT,
-            },
-            insets: {
-              top: DEMO_STATUS_BAR_INSET,
-              right: 0,
-              bottom: DEMO_HOME_INDICATOR_INSET,
-              left: 0,
-            },
-          }}
-        >
-          <View style={styles.screen}>{children}</View>
-        </SafeAreaProvider>
+        <SafeAreaFrameContext.Provider value={DEMO_FRAME}>
+          <SafeAreaInsetsContext.Provider value={DEMO_INSETS}>
+            <View style={styles.screen}>{children}</View>
+          </SafeAreaInsetsContext.Provider>
+        </SafeAreaFrameContext.Provider>
 
         <StatusBarChrome />
         <View

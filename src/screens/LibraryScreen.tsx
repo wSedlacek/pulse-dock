@@ -111,8 +111,7 @@ export function LibraryScreen() {
         </Stack.Toolbar>
       ) : null}
 
-      <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
-        <FlatList
+      <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
           contentInsetAdjustmentBehavior="automatic"
@@ -121,14 +120,16 @@ export function LibraryScreen() {
           scrollEventThrottle={16}
           onScroll={Platform.OS === 'web' ? pullSearch.onScroll : undefined}
           onScrollBeginDrag={() => setOpenSwipeId(null)}
-          style={{ backgroundColor: colors.groupedBackground }}
+          style={[styles.root, { backgroundColor: colors.groupedBackground }]}
           contentContainerStyle={[styles.list, contentInsets]}
           ListHeaderComponent={
             <View style={styles.headerBlock}>
               <LargeTitle>Library</LargeTitle>
-              <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
-                {importHint()}
-              </Text>
+              {Platform.OS === 'web' ? (
+                <Text style={[typography.footnote, { color: colors.secondaryLabel }]}>
+                  {importHint()}
+                </Text>
+              ) : null}
 
               {Platform.OS === 'web' ? (
                 <>
@@ -210,9 +211,10 @@ export function LibraryScreen() {
               />
             </View>
           )}
-          ListFooterComponent={<View style={{ height: 100 }} />}
+          ListFooterComponent={
+            <View style={{ height: Platform.OS === 'web' ? 100 : 24 }} />
+          }
         />
-      </View>
     </>
   );
 }
@@ -236,13 +238,13 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   firstRow: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
     overflow: 'hidden',
   },
   lastRow: {
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
     overflow: 'hidden',
     marginBottom: 8,
   },

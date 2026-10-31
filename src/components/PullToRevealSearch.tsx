@@ -30,7 +30,7 @@ type Hook = {
 export function usePullToRevealSearch(enabled: boolean): Hook {
   const [visible, setVisible] = useState(true);
   const visibleRef = useRef(true);
-  const height = useRef(new Animated.Value(SEARCH_ROW)).current;
+  const [height] = useState(() => new Animated.Value(SEARCH_ROW));
 
   const animate = useCallback(
     (open: boolean) => {

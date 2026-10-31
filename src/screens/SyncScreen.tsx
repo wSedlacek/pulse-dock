@@ -20,6 +20,7 @@ export function SyncScreen() {
     connectDemoPlayer,
     linkUsbPlayer,
     usbSupported,
+    showDemoControls,
   } = useMusicStore();
   const { plan, addBytes, removeBytes, keepBytes } = useSyncSummary();
   const { colors } = useTheme();
@@ -43,9 +44,13 @@ export function SyncScreen() {
     if (Platform.OS === 'ios') {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    await runSync();
+    const ok = await runSync();
     if (Platform.OS === 'ios') {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void Haptics.notificationAsync(
+        ok
+          ? Haptics.NotificationFeedbackType.Success
+          : Haptics.NotificationFeedbackType.Error,
+      );
     }
   };
 
@@ -76,13 +81,17 @@ export function SyncScreen() {
                   onPress={() => void linkUsbPlayer()}
                 />
               ) : null}
-              <View style={{ height: usbSupported ? 10 : 0 }} />
-              <IOSButton
-                label="Connect Demo Player"
-                variant={usbSupported ? 'gray' : 'filled'}
-                size={usbSupported ? 'medium' : 'large'}
-                onPress={connectDemoPlayer}
-              />
+              {showDemoControls ? (
+                <>
+                  <View style={{ height: usbSupported ? 10 : 0 }} />
+                  <IOSButton
+                    label="Connect Demo Player"
+                    variant={usbSupported ? 'gray' : 'filled'}
+                    size={usbSupported ? 'medium' : 'large'}
+                    onPress={connectDemoPlayer}
+                  />
+                </>
+              ) : null}
             </View>
           </GroupedSection>
         ) : (
@@ -225,12 +234,17 @@ function Stat({
 }: {
   label: string;
   value: number;
-  color: string;
+  color: string | import('react-native').ColorValue;
 }) {
   const { colors } = useTheme();
   return (
-    <View style={styles.stat}>
-      <Text style={[typography.title1, { color }]}>{value}</Text>
+    <View
+      style={styles.stat}
+      accessibilityLabel={`${value} ${label}`}
+    >
+      <Text style={[typography.title1, { color, fontVariant: ['tabular-nums'] }]}>
+        {value}
+      </Text>
       <Text style={[typography.caption1, { color: colors.secondaryLabel }]}>{label}</Text>
     </View>
   );
@@ -240,7 +254,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pad: {
     paddingTop: 8,
-    paddingBottom: 96,
+    paddingBottom: Platform.OS === 'web' ? 96 : 32,
   },
   titlePad: {
     paddingHorizontal: 16,

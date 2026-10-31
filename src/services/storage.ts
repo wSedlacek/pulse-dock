@@ -29,9 +29,10 @@ export async function saveDevice(device: PlayerDevice | null): Promise<void> {
   await AsyncStorage.setItem(DEVICE_KEY, JSON.stringify(device));
 }
 
-export async function loadSelection(): Promise<string[]> {
+/** `null` = never saved (first launch). `[]` = user cleared selection. */
+export async function loadSelection(): Promise<string[] | null> {
   const raw = await AsyncStorage.getItem(SELECTION_KEY);
-  if (!raw) return [];
+  if (raw == null) return null;
   return JSON.parse(raw) as string[];
 }
 

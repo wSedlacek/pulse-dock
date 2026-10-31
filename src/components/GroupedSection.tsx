@@ -15,7 +15,10 @@ export function GroupedSection({ header, footer, children }: Props) {
   return (
     <View style={styles.wrap}>
       {header ? (
-        <Text style={[typography.footnote, styles.header, { color: colors.secondaryLabel }]}>
+        <Text
+          accessibilityRole="header"
+          style={[typography.footnote, styles.header, { color: colors.secondaryLabel }]}
+        >
           {header.toUpperCase()}
         </Text>
       ) : null}
@@ -24,7 +27,6 @@ export function GroupedSection({ header, footer, children }: Props) {
           styles.card,
           {
             backgroundColor: colors.secondaryGrouped,
-            borderColor: colors.separator,
           },
         ]}
       >
@@ -49,9 +51,8 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   card: {
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
   },
   footer: {
     marginTop: 8,

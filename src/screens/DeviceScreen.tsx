@@ -8,12 +8,14 @@ import { useScreenContentInsets } from '../navigation/useScreenContentInsets';
 import { useMusicStore } from '../store/MusicStore';
 import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
+import { confirmDestructive } from '../utils/confirm';
 
 export function DeviceScreen() {
   const {
     device,
     libraryById,
     usbSupported,
+    showDemoControls,
     connectDemoPlayer,
     linkUsbPlayer,
     disconnectPlayer,
@@ -29,7 +31,29 @@ export function DeviceScreen() {
 
   const linkFooter = usbSupported
     ? 'Plug the MP3 player into your phone (USB-C / Lightning adapter), open Files → Locations, then choose the player’s Music folder so PulseDock can copy MP3s onto it.'
-    : 'USB file copy runs in the iOS/Android app. This web preview uses the demo player only.';
+    : showDemoControls
+      ? 'USB file copy runs in the iOS/Android app. This web preview uses the demo player only.'
+      : 'Plug in your MP3 player and link its Music folder to manage files on device.';
+
+  const onDisconnect = async () => {
+    const ok = await confirmDestructive({
+      title: 'Disconnect Player?',
+      message: device?.isDemo
+        ? 'The demo player will disconnect. Your library and selection stay on this device.'
+        : 'PulseDock will stop writing to this USB folder until you link it again.',
+      confirmLabel: 'Disconnect',
+    });
+    if (ok) disconnectPlayer();
+  };
+
+  const onResetDemo = async () => {
+    const ok = await confirmDestructive({
+      title: 'Reset Demo Data?',
+      message: 'Sample tracks, selection, and the demo player will be restored to defaults.',
+      confirmLabel: 'Reset',
+    });
+    if (ok) await resetDemoData();
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.groupedBackground }]}>
@@ -93,7 +117,10 @@ export function DeviceScreen() {
                           {device.model}
                         </Text>
                       </View>
-                      <View style={[styles.pill, { backgroundColor: colors.secondaryFill }]}>
+                      <View
+                        style={[styles.badge, { backgroundColor: colors.secondaryFill }]}
+                        accessibilityLabel={device.isDemo ? 'Demo player' : 'USB player'}
+                      >
                         <View
                           style={[
                             styles.dot,
@@ -132,16 +159,16 @@ export function DeviceScreen() {
                       label="Disconnect"
                       variant="plain"
                       size="small"
-                      onPress={disconnectPlayer}
+                      onPress={() => void onDisconnect()}
                       style={styles.half}
                     />
                     <View style={[styles.vSep, { backgroundColor: colors.separator }]} />
-                    {device.isDemo ? (
+                    {device.isDemo && showDemoControls ? (
                       <IOSButton
                         label="Reset Demo"
                         variant="plain"
                         size="small"
-                        onPress={() => void resetDemoData()}
+                        onPress={() => void onResetDemo()}
                         style={styles.half}
                       />
                     ) : (
@@ -172,6 +199,7 @@ export function DeviceScreen() {
                     styles.sectionLabel,
                     { color: colors.secondaryLabel },
                   ]}
+                  accessibilityRole="header"
                 >
                   ON THIS PLAYER
                 </Text>
@@ -190,7 +218,9 @@ export function DeviceScreen() {
                   >
                     {usbSupported
                       ? 'Link the USB player’s Music folder to copy real MP3 files onto it.'
-                      : 'Use the demo player here, or open PulseDock on your phone to write to USB.'}
+                      : showDemoControls
+                        ? 'Use the demo player here, or open PulseDock on your phone to write to USB.'
+                        : 'Link a USB Music folder to manage songs on your player.'}
                   </Text>
                   {usbSupported ? (
                     <IOSButton
@@ -199,13 +229,17 @@ export function DeviceScreen() {
                       onPress={() => void linkUsbPlayer()}
                     />
                   ) : null}
-                  <View style={{ height: usbSupported ? 10 : 0 }} />
-                  <IOSButton
-                    label="Connect Demo Player"
-                    variant={usbSupported ? 'gray' : 'filled'}
-                    size={usbSupported ? 'medium' : 'large'}
-                    onPress={connectDemoPlayer}
-                  />
+                  {showDemoControls ? (
+                    <>
+                      <View style={{ height: usbSupported ? 10 : 0 }} />
+                      <IOSButton
+                        label="Connect Demo Player"
+                        variant={usbSupported ? 'gray' : 'filled'}
+                        size={usbSupported ? 'medium' : 'large'}
+                        onPress={connectDemoPlayer}
+                      />
+                    </>
+                  ) : null}
                 </View>
               </GroupedSection>
             ) : null}
@@ -253,7 +287,9 @@ export function DeviceScreen() {
             />
           </View>
         )}
-        ListFooterComponent={<View style={{ height: 88 }} />}
+        ListFooterComponent={
+          <View style={{ height: Platform.OS === 'web' ? 100 : 88 }} />
+        }
       />
     </View>
   );
@@ -273,13 +309,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
   },
-  pill: {
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 8,
   },
   dot: {
     width: 7,
@@ -297,13 +333,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   firstRow: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
     overflow: 'hidden',
   },
   lastRow: {
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
     overflow: 'hidden',
   },
 });

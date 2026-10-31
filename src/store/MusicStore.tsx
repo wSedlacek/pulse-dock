@@ -7,8 +7,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Platform } from 'react-native';
 import { DEMO_PLAYER_CAPACITY, DEMO_TRACKS } from '../data/demoTracks';
+import { SHOW_DEMO_CONTROLS } from '../demo/showDemoControls';
 import { pickMp3Files } from '../services/importTracks';
 import {
   loadDevice,
@@ -40,6 +40,7 @@ type MusicStoreValue = {
   syncProgress: SyncProgress;
   libraryById: Map<string, Track>;
   usbSupported: boolean;
+  showDemoControls: boolean;
   importTracks: () => Promise<void>;
   removeTrack: (id: string) => void;
   toggleSelected: (id: string) => void;
@@ -49,7 +50,7 @@ type MusicStoreValue = {
   connectDemoPlayer: () => void;
   linkUsbPlayer: () => Promise<void>;
   disconnectPlayer: () => void;
-  runSync: () => Promise<void>;
+  runSync: () => Promise<boolean>;
   resetDemoData: () => Promise<void>;
 };
 
@@ -113,28 +114,35 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
       ]);
       if (cancelled) return;
 
-      const library = storedLibrary ?? DEMO_TRACKS;
+      // Native production: empty library. Web / __DEV__: sample tracks for rehearsal.
+      const library =
+        storedLibrary ?? (SHOW_DEMO_CONTROLS ? DEMO_TRACKS : []);
       setTracks(library);
 
       const normalized = normalizeDevice(storedDevice);
       let nextDevice: PlayerDevice | null;
       if (!normalized) {
-        // Native: start disconnected so linking USB is the primary path.
-        // Web: seed the demo player for rehearsals.
-        nextDevice =
-          Platform.OS === 'web' ? createDemoDevice(['demo-01', 'demo-03']) : null;
+        nextDevice = SHOW_DEMO_CONTROLS
+          ? createDemoDevice(['demo-01', 'demo-03'])
+          : null;
       } else if (normalized.isDemo) {
-        nextDevice = normalized;
+        nextDevice = SHOW_DEMO_CONTROLS ? normalized : null;
       } else {
         nextDevice = tryRestoreUsbPlayer(normalized, library);
       }
       setDevice(nextDevice);
 
-      const validSelection =
-        storedSelection.length > 0
-          ? storedSelection.filter((id) => library.some((t) => t.id === id))
-          : library.map((t) => t.id);
-      setSelectedIds(validSelection);
+      // null = never saved → select all real (non-demo) tracks on first run.
+      // [] = user cleared; keep empty across relaunches.
+      if (storedSelection === null) {
+        setSelectedIds(
+          library.filter((t) => !t.isDemo || SHOW_DEMO_CONTROLS).map((t) => t.id),
+        );
+      } else {
+        setSelectedIds(
+          storedSelection.filter((id) => library.some((t) => t.id === id)),
+        );
+      }
       setReady(true);
     })();
     return () => {
@@ -166,28 +174,26 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
     setSelectedIds((prev) => [...imported.map((t) => t.id), ...prev]);
   }, []);
 
-  const removeTrack = useCallback(
-    (id: string) => {
-      setTracks((prev) => prev.filter((t) => t.id !== id));
-      setSelectedIds((prev) => prev.filter((x) => x !== id));
-      setDevice((prev) =>
-        prev
-          ? {
-              ...prev,
-              trackIds: prev.trackIds.filter((x) => x !== id),
-              fileNames: Object.fromEntries(
-                Object.entries(prev.fileNames).filter(([key]) => key !== id),
-              ),
-              usedBytes: Math.max(
-                0,
-                prev.usedBytes - (libraryById.get(id)?.sizeBytes ?? 0),
-              ),
-            }
-          : prev,
-      );
-    },
-    [libraryById],
-  );
+  const removeTrack = useCallback((id: string) => {
+    setTracks((prev) => prev.filter((t) => t.id !== id));
+    setSelectedIds((prev) => prev.filter((x) => x !== id));
+    // Keep USB device.trackIds so Sync can delete the on-disk file.
+    // Demo player: drop immediately (no real files).
+    setDevice((prev) => {
+      if (!prev?.isDemo) return prev;
+      return {
+        ...prev,
+        trackIds: prev.trackIds.filter((x) => x !== id),
+        fileNames: Object.fromEntries(
+          Object.entries(prev.fileNames).filter(([key]) => key !== id),
+        ),
+        usedBytes: Math.max(
+          0,
+          prev.usedBytes - (libraryById.get(id)?.sizeBytes ?? 0),
+        ),
+      };
+    });
+  }, [libraryById]);
 
   const toggleSelected = useCallback((id: string) => {
     setSelectedIds((prev) =>
@@ -208,6 +214,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const connectDemoPlayer = useCallback(() => {
+    if (!SHOW_DEMO_CONTROLS) return;
     setDevice(createDemoDevice([]));
     setSyncProgress({
       active: false,
@@ -248,7 +255,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
     setDevice((prev) => (prev ? { ...prev, connected: false } : prev));
   }, []);
 
-  const runSync = useCallback(async () => {
+  const runSync = useCallback(async (): Promise<boolean> => {
     if (!device?.connected) {
       setSyncProgress({
         active: false,
@@ -259,7 +266,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
           ? 'Re-link the USB Music folder on the Player tab, then sync again.'
           : 'Connect a player before syncing.',
       });
-      return;
+      return false;
     }
 
     const plan = buildSyncPlan(tracks, device, selectedIds);
@@ -273,7 +280,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
         total: 0,
         error: 'Not enough free space on the player for this sync set.',
       });
-      return;
+      return false;
     }
 
     if (actionable.length === 0) {
@@ -287,10 +294,9 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
       setDevice((prev) =>
         prev ? { ...prev, lastSyncedAt: new Date().toISOString() } : prev,
       );
-      return;
+      return true;
     }
 
-    // Real USB: refuse demo-only tracks (no bytes to copy).
     if (!device.isDemo) {
       const missingFile = actionable.find((item) => {
         if (item.action !== 'add') return false;
@@ -304,9 +310,9 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
           currentLabel: '',
           completed: 0,
           total: 0,
-          error: `"${track?.title ?? 'A song'}" is demo metadata only. Import the real MP3, then sync.`,
+          error: `"${track?.title ?? 'A song'}" has no local file. Import the MP3, then sync.`,
         });
-        return;
+        return false;
       }
     }
 
@@ -336,8 +342,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
           });
           await new Promise((resolve) => setTimeout(resolve, 320));
         }
-        const nextDevice = applySyncPlan(device, plan, libraryById);
-        setDevice(nextDevice);
+        setDevice(applySyncPlan(device, plan, libraryById));
       } else {
         const nextDevice = await executeUsbSync({
           device,
@@ -365,6 +370,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
         total: actionable.length,
         error: null,
       });
+      return true;
     } catch (error) {
       setSyncProgress({
         active: false,
@@ -376,10 +382,12 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
             ? error.message
             : 'USB transfer failed. Check the cable and re-link the player folder.',
       });
+      return false;
     }
   }, [device, tracks, selectedIds, libraryById]);
 
   const resetDemoData = useCallback(async () => {
+    if (!SHOW_DEMO_CONTROLS) return;
     setTracks(DEMO_TRACKS);
     setDevice(createDemoDevice(['demo-01', 'demo-03']));
     setSelectedIds(DEMO_TRACKS.map((t) => t.id));
@@ -401,6 +409,7 @@ export function MusicStoreProvider({ children }: { children: ReactNode }) {
       syncProgress,
       libraryById,
       usbSupported: canUseUsbFileCopy(),
+      showDemoControls: SHOW_DEMO_CONTROLS,
       importTracks,
       removeTrack,
       toggleSelected,

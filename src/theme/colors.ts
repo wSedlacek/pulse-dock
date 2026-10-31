@@ -1,41 +1,27 @@
+import { DynamicColorIOS, Platform, PlatformColor, type ColorValue } from 'react-native';
+
 export type ColorScheme = 'light' | 'dark';
 
-/** iOS Human Interface–aligned palette (approximates system colors). */
+/** iOS Human Interface–aligned palette. On iOS, prefer live system colors. */
 export type ThemeColors = {
-  /** systemGroupedBackground */
-  groupedBackground: string;
-  /** secondarySystemGroupedBackground */
-  secondaryGrouped: string;
-  /** tertiarySystemGroupedBackground */
-  tertiaryGrouped: string;
-  /** label */
-  label: string;
-  /** secondaryLabel */
-  secondaryLabel: string;
-  /** tertiaryLabel */
-  tertiaryLabel: string;
-  /** systemBlue */
-  tint: string;
-  /** systemRed */
-  danger: string;
-  /** systemOrange */
-  orange: string;
-  /** systemGreen */
-  green: string;
-  /** separator */
-  separator: string;
-  /** opaqueSeparator */
-  opaqueSeparator: string;
-  /** systemFill */
-  fill: string;
-  /** secondarySystemFill */
-  secondaryFill: string;
-  /** tab / nav bar surface */
-  bar: string;
+  groupedBackground: ColorValue;
+  secondaryGrouped: ColorValue;
+  tertiaryGrouped: ColorValue;
+  label: ColorValue;
+  secondaryLabel: ColorValue;
+  tertiaryLabel: ColorValue;
+  tint: ColorValue;
+  danger: ColorValue;
+  orange: ColorValue;
+  green: ColorValue;
+  separator: ColorValue;
+  opaqueSeparator: ColorValue;
+  fill: ColorValue;
+  secondaryFill: ColorValue;
+  bar: ColorValue;
   /** Desk behind the web-only DemoPhoneShell (unused on native). */
-  desk: string;
-  /** filled button label */
-  onTint: string;
+  desk: ColorValue;
+  onTint: ColorValue;
 };
 
 const light: ThemeColors = {
@@ -78,7 +64,40 @@ const dark: ThemeColors = {
   onTint: '#FFFFFF',
 };
 
+/** Live UIKit system colors — Liquid Glass chrome resolves against these. */
+function iosSystemColors(): ThemeColors {
+  return {
+    groupedBackground: PlatformColor('systemGroupedBackground'),
+    secondaryGrouped: PlatformColor('secondarySystemGroupedBackground'),
+    tertiaryGrouped: PlatformColor('tertiarySystemGroupedBackground'),
+    label: PlatformColor('label'),
+    secondaryLabel: PlatformColor('secondaryLabel'),
+    tertiaryLabel: PlatformColor('tertiaryLabel'),
+    tint: PlatformColor('systemBlue'),
+    danger: PlatformColor('systemRed'),
+    orange: PlatformColor('systemOrange'),
+    green: PlatformColor('systemGreen'),
+    separator: PlatformColor('separator'),
+    opaqueSeparator: PlatformColor('opaqueSeparator'),
+    fill: PlatformColor('systemFill'),
+    secondaryFill: PlatformColor('secondarySystemFill'),
+    bar: DynamicColorIOS({
+      light: 'rgba(249, 249, 249, 0.94)',
+      dark: 'rgba(28, 28, 30, 0.94)',
+    }),
+    desk: PlatformColor('systemGray5'),
+    onTint: '#FFFFFF',
+  };
+}
+
 export const palettes = { light, dark } as const;
+
+export function colorsForScheme(scheme: ColorScheme): ThemeColors {
+  if (Platform.OS === 'ios') {
+    return iosSystemColors();
+  }
+  return palettes[scheme];
+}
 
 /** Boot fallback before ThemeProvider mounts. */
 export const colors = dark;

@@ -1,47 +1,21 @@
-import { DynamicColorIOS, Platform } from 'react-native';
+import { PlatformColor } from 'react-native';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useMusicStore } from '../store/MusicStore';
-import { useTheme } from '../theme/ThemeProvider';
 
-/** Stable Native Tabs API (SDK 58+). */
+/**
+ * Native tabs — leave appearance to the system so iOS 26+ draws Liquid Glass.
+ * Do not set backgroundColor / blurEffect / disableTransparentOnScrollEdge;
+ * those fight UIKit on iOS 26 and only mattered on older OS versions.
+ */
 export default function AppTabs() {
   const { selectedIds } = useMusicStore();
-  const { colors } = useTheme();
-
-  const tint =
-    Platform.OS === 'ios'
-      ? DynamicColorIOS({ light: '#007AFF', dark: '#0A84FF' })
-      : colors.tint;
-
-  const labelColor =
-    Platform.OS === 'ios'
-      ? DynamicColorIOS({
-          light: 'rgba(60, 60, 67, 0.60)',
-          dark: 'rgba(235, 235, 245, 0.60)',
-        })
-      : colors.secondaryLabel;
 
   return (
     <NativeTabs
-      tintColor={tint}
-      labelStyle={{
-        fontSize: 10,
-        fontWeight: '500',
-        color: labelColor,
-      }}
-      blurEffect="systemDefault"
-      backgroundColor={
-        Platform.OS === 'ios'
-          ? DynamicColorIOS({
-              light: 'rgba(255,255,255,0.0)',
-              dark: 'rgba(0,0,0,0.0)',
-            })
-          : colors.bar
-      }
-      badgeBackgroundColor={tint}
+      tintColor={PlatformColor('systemBlue')}
       minimizeBehavior="automatic"
     >
-      <NativeTabs.Trigger name="library" disableTransparentOnScrollEdge>
+      <NativeTabs.Trigger name="library">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'music.note.list', selected: 'music.note.list' }}
           md={{ default: 'library_music', selected: 'library_music' }}
@@ -54,7 +28,7 @@ export default function AppTabs() {
         ) : null}
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="player" disableTransparentOnScrollEdge>
+      <NativeTabs.Trigger name="player">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'ipod', selected: 'ipod' }}
           md={{ default: 'devices', selected: 'devices' }}
@@ -62,7 +36,7 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Player</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="sync" disableTransparentOnScrollEdge>
+      <NativeTabs.Trigger name="sync">
         <NativeTabs.Trigger.Icon
           sf={{
             default: 'arrow.triangle.2.circlepath',

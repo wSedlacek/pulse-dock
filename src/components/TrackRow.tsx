@@ -1,8 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ColorValue,
+} from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import Swipeable, {
   SwipeDirection,
@@ -23,7 +30,9 @@ import { useTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
 import { formatBytes, formatDuration } from '../utils/format';
 
-const DELETE_WIDTH = 84;
+const DELETE_WIDTH = 80;
+/** Progress past the open panel — commit delete on finger release (Mail). */
+const FULL_SWIPE_PROGRESS = 1.85;
 
 type Props = {
   track: Track;
@@ -33,7 +42,6 @@ type Props = {
   trailingLabel?: string;
   mode?: 'select' | 'plain';
   showSeparator?: boolean;
-  /** Only one row should stay open — parent tracks the active id. */
   swipeOpenId?: string | null;
   onSwipeOpenChange?: (id: string | null) => void;
 };
@@ -43,8 +51,8 @@ function RowIcon({
   color,
   size = 22,
 }: {
-  name: 'checkmark.circle.fill' | 'circle' | 'music.note' | 'trash.fill';
-  color: string;
+  name: 'checkmark.circle.fill' | 'circle' | 'music.note';
+  color: ColorValue;
   size?: number;
 }) {
   if (Platform.OS === 'ios') {
@@ -54,21 +62,34 @@ function RowIcon({
     'checkmark.circle.fill': 'checkmark-circle' as const,
     circle: 'ellipse-outline' as const,
     'music.note': 'musical-note' as const,
-    'trash.fill': 'trash' as const,
   };
-  return <Ionicons name={map[name]} size={size} color={color} />;
+  return <Ionicons name={map[name]} size={size} color={color as string} />;
 }
 
 function DeleteAction({
   progress,
   translation,
   onDelete,
+  onCrossFullSwipe,
 }: {
   progress: SharedValue<number>;
   translation: SharedValue<number>;
   onDelete: () => void;
+  onCrossFullSwipe: (crossed: boolean) => void;
 }) {
   const { colors } = useTheme();
+
+  useAnimatedReaction(
+    () => progress.value,
+    (value, prev) => {
+      const crossed = value >= FULL_SWIPE_PROGRESS;
+      const wasCrossed = (prev ?? 0) >= FULL_SWIPE_PROGRESS;
+      if (crossed !== wasCrossed) {
+        runOnJS(onCrossFullSwipe)(crossed);
+      }
+    },
+    [onCrossFullSwipe],
+  );
 
   const style = useAnimatedStyle(() => {
     const width = interpolate(
@@ -77,16 +98,13 @@ function DeleteAction({
       [0, DELETE_WIDTH],
       Extrapolation.CLAMP,
     );
-    // Stretch toward full-swipe Mail behavior once past the action width.
     const overshoot = interpolate(
       progress.value,
       [1, 2.2],
-      [0, 40],
+      [0, 48],
       Extrapolation.CLAMP,
     );
-    return {
-      width: width + overshoot,
-    };
+    return { width: Math.max(width + overshoot, 0) };
   });
 
   return (
@@ -97,10 +115,7 @@ function DeleteAction({
         accessibilityRole="button"
         accessibilityLabel="Delete"
       >
-        <RowIcon name="trash.fill" color={colors.onTint} size={20} />
-        <Text style={[typography.footnote, styles.deleteLabel, { color: colors.onTint }]}>
-          Delete
-        </Text>
+        <Text style={[typography.headline, { color: colors.onTint }]}>Delete</Text>
       </RectButton>
     </Animated.View>
   );
@@ -120,7 +135,8 @@ export function TrackRow({
   const { colors } = useTheme();
   const swipeRef = useRef<SwipeableMethods | null>(null);
   const checkScale = useSharedValue(selected ? 1 : 0.92);
-  const committingFullSwipe = useRef(false);
+  const fullSwipeArmed = useRef(false);
+  const didThresholdHaptic = useRef(false);
 
   useEffect(() => {
     checkScale.value = withSpring(selected ? 1 : 0.92, {
@@ -141,49 +157,61 @@ export function TrackRow({
 
   const performRemove = useCallback(() => {
     if (Platform.OS === 'ios') {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     swipeRef.current?.close();
     onSwipeOpenChange?.(null);
     onRemove?.();
   }, [onRemove, onSwipeOpenChange]);
 
-  const maybeFullSwipeDelete = useCallback(
-    (progress: number) => {
-      if (!onRemove || committingFullSwipe.current) return;
-      if (progress > 2.05) {
-        committingFullSwipe.current = true;
-        performRemove();
+  const onCrossFullSwipe = useCallback((crossed: boolean) => {
+    fullSwipeArmed.current = crossed;
+    if (crossed && !didThresholdHaptic.current) {
+      didThresholdHaptic.current = true;
+      if (Platform.OS === 'ios') {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-    },
-    [onRemove, performRemove],
-  );
+    }
+    if (!crossed) {
+      didThresholdHaptic.current = false;
+    }
+  }, []);
 
   const renderRightActions = (
     progress: SharedValue<number>,
     translation: SharedValue<number>,
-  ) => {
-    return (
-      <FullSwipeWatcher progress={progress} onThreshold={maybeFullSwipeDelete}>
-        <DeleteAction
-          progress={progress}
-          translation={translation}
-          onDelete={performRemove}
-        />
-      </FullSwipeWatcher>
-    );
-  };
+  ) => (
+    <DeleteAction
+      progress={progress}
+      translation={translation}
+      onDelete={performRemove}
+      onCrossFullSwipe={onCrossFullSwipe}
+    />
+  );
+
+  const subtitle = [
+    track.artist,
+    track.durationSec > 0 ? formatDuration(track.durationSec) : null,
+    formatBytes(track.sizeBytes),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const row = (
     <Pressable
-      accessibilityRole={mode === 'select' ? 'checkbox' : 'none'}
+      accessibilityRole={mode === 'select' ? 'checkbox' : 'button'}
       accessibilityState={mode === 'select' ? { checked: !!selected } : undefined}
-      accessibilityLabel={track.title}
+      accessibilityLabel={`${track.title}. ${subtitle}`}
+      accessibilityActions={
+        onRemove ? [{ name: 'delete', label: 'Delete' }] : undefined
+      }
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'delete') performRemove();
+      }}
       onPress={
         mode === 'select'
           ? () => {
               if (Platform.OS === 'ios') void Haptics.selectionAsync();
-              // Close any open swipe before toggling.
               if (swipeOpenId) onSwipeOpenChange?.(null);
               onToggle?.();
             }
@@ -192,9 +220,7 @@ export function TrackRow({
       style={({ pressed }) => [
         styles.row,
         {
-          backgroundColor: pressed
-            ? colors.fill
-            : colors.secondaryGrouped,
+          backgroundColor: pressed ? colors.fill : colors.secondaryGrouped,
         },
       ]}
     >
@@ -228,9 +254,7 @@ export function TrackRow({
             style={[typography.subhead, { color: colors.secondaryLabel }]}
             numberOfLines={1}
           >
-            {track.artist}
-            {track.durationSec > 0 ? ` · ${formatDuration(track.durationSec)}` : ''}
-            {` · ${formatBytes(track.sizeBytes)}`}
+            {subtitle}
           </Text>
         </View>
 
@@ -251,25 +275,30 @@ export function TrackRow({
     <Swipeable
       ref={swipeRef}
       friction={2}
-      rightThreshold={40}
+      rightThreshold={DELETE_WIDTH * 0.55}
       overshootRight
       overshootFriction={8}
       enableTrackpadTwoFingerGesture
       containerStyle={styles.swipeContainer}
-      childrenContainerStyle={styles.swipeChildren}
       renderRightActions={renderRightActions}
       onSwipeableOpenStartDrag={() => {
-        if (Platform.OS === 'ios') void Haptics.selectionAsync();
+        fullSwipeArmed.current = false;
+        didThresholdHaptic.current = false;
         onSwipeOpenChange?.(track.id);
       }}
       onSwipeableOpen={(direction) => {
-        if (direction === SwipeDirection.LEFT) {
-          onSwipeOpenChange?.(track.id);
+        if (direction !== SwipeDirection.LEFT) return;
+        // Commit only on finger release after crossing the full-swipe threshold.
+        if (fullSwipeArmed.current) {
+          performRemove();
+          return;
         }
+        onSwipeOpenChange?.(track.id);
       }}
       onSwipeableClose={() => {
         if (swipeOpenId === track.id) onSwipeOpenChange?.(null);
-        committingFullSwipe.current = false;
+        fullSwipeArmed.current = false;
+        didThresholdHaptic.current = false;
       }}
     >
       {row}
@@ -277,34 +306,9 @@ export function TrackRow({
   );
 }
 
-/** Bridges Reanimated progress → JS so a hard full-swipe can commit delete. */
-function FullSwipeWatcher({
-  progress,
-  onThreshold,
-  children,
-}: {
-  progress: SharedValue<number>;
-  onThreshold: (value: number) => void;
-  children: ReactNode;
-}) {
-  useAnimatedReaction(
-    () => progress.value,
-    (value) => {
-      if (value > 2.05) {
-        runOnJS(onThreshold)(value);
-      }
-    },
-    [onThreshold],
-  );
-  return <>{children}</>;
-}
-
 const styles = StyleSheet.create({
   swipeContainer: {
     overflow: 'hidden',
-  },
-  swipeChildren: {
-    backgroundColor: 'transparent',
   },
   row: {
     flexDirection: 'row',
@@ -342,10 +346,6 @@ const styles = StyleSheet.create({
     minWidth: DELETE_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
-    paddingHorizontal: 12,
-  },
-  deleteLabel: {
-    fontWeight: '600',
+    paddingHorizontal: 16,
   },
 });

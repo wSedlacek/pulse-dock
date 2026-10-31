@@ -1,13 +1,15 @@
-import { Platform } from 'react-native';
+import { Platform, PlatformColor } from 'react-native';
 import type { ThemeColors } from '../theme/colors';
 
 /**
- * Native-feeling stack chrome.
+ * Stack chrome.
  *
- * On iOS: transparent large-title header + system material.
- * On web/Android: hide the stack header (web uses LargeTitle polyfill;
- * DemoPhoneShell owns safe-area insets so navigators must not paint a second
- * white safe-area pad).
+ * On iOS: transparent large-title header so Liquid Glass / system material
+ * draws. Avoid painting header backgrounds or blur overrides — those fight
+ * UIKit on iOS 26+.
+ *
+ * On web/Android: hide the stack header (LargeTitle polyfill on web;
+ * DemoPhoneShell owns safe-area insets).
  */
 export function iosStackOptions(colors: ThemeColors) {
   const isIOS = Platform.OS === 'ios';
@@ -16,28 +18,13 @@ export function iosStackOptions(colors: ThemeColors) {
     headerShown: isIOS,
     headerLargeTitle: isIOS,
     headerTransparent: isIOS,
-    headerBlurEffect: isIOS ? ('systemChromeMaterial' as const) : undefined,
     headerShadowVisible: false,
-    headerTintColor: colors.tint,
+    headerTintColor: isIOS ? PlatformColor('systemBlue') : colors.tint,
     ...(isIOS
       ? {}
       : {
-          // Shell / system SafeAreaProvider already applied insets.
           safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
         }),
-    headerLargeTitleStyle: {
-      color: colors.label,
-    },
-    headerTitleStyle: {
-      color: colors.label,
-      fontWeight: '600' as const,
-    },
-    headerLargeStyle: {
-      backgroundColor: colors.groupedBackground,
-    },
-    headerStyle: {
-      backgroundColor: isIOS ? 'transparent' : colors.groupedBackground,
-    },
     contentStyle: {
       backgroundColor: colors.groupedBackground,
       flex: 1,
