@@ -2,6 +2,12 @@
 
 iPhone-hosted MP3 manager that **copies real MP3 files** onto a USB mass-storage MP3 player.
 
+<p align="center">
+  <img src="assets/screenshots/library.png" width="260" alt="Library — select tracks to sync" />
+  <img src="assets/screenshots/player.png" width="260" alt="Player — linked USB device and on-player tracks" />
+  <img src="assets/screenshots/sync.png" width="260" alt="Sync — transfer plan and demo sync" />
+</p>
+
 ## How USB sync works
 
 1. **Import** MP3s into the host library (Files / cloud / document picker). Files are copied into the app cache so Sync can read them.
